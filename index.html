@@ -275,14 +275,31 @@ table.datos .num{text-align:right;}
 }
 #toast.visible{opacity:.95;}
 
-/* ===== Impresión ===== */
+/* ===== Impresión (rollo térmico 80 mm) ===== */
+@page{ size:80mm auto; margin:0; }
 @media print{
+  html,body{ width:80mm; margin:0; padding:0; background:#fff; }
   body *{visibility:hidden;}
   #overlay,#overlay *{visibility:hidden;}
   #overlay.imprimiendo, #overlay.imprimiendo #modalRecibo, #overlay.imprimiendo #modalRecibo *{visibility:visible;}
-  #overlay.imprimiendo{position:absolute; inset:0; background:#fff; padding:0;}
-  #overlay.imprimiendo .modal{box-shadow:none; max-width:none;}
+  #overlay.imprimiendo{position:absolute; inset:0; background:#fff; padding:0; display:block;}
+  #overlay.imprimiendo .modal{box-shadow:none; max-width:none; width:80mm; margin:0; border:0; border-radius:0; background:#fff;}
   #overlay.imprimiendo .modal h2, #overlay.imprimiendo .modal .pie{display:none;}
+  /* El recibo ocupa los 80 mm reales, sin márgenes ni borde decorativo */
+  #overlay.imprimiendo #recibo{
+    width:72mm;            /* zona imprimible útil del rollo de 80 mm */
+    max-width:72mm;
+    margin:0;
+    padding:0 2mm;
+    border:0;
+    background:#fff;
+    font-family:"Courier New",Consolas,monospace;
+    font-size:11pt;        /* ~32 caracteres por línea en 80 mm */
+    line-height:1.25;
+    color:#000;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
 }
 
 /* Barra de pestañas móvil, total del teclado y botón cobrar de la mesa (ocultos en escritorio) */
@@ -701,13 +718,51 @@ table.datos .num{text-align:right;}
           <div class="form-acciones">
             <button class="btn verde" id="cfgGuardar">💾 Guardar</button>
           </div>
+
+          <h2 style="margin-top:28px">VERI*FACTU</h2>
+          <p class="hint" style="font-size:12px;color:#777;margin:0 2px 10px">
+            Sistema de facturación verificable (obligatorio en España). El TPV ya genera la
+            <b>huella encadenada</b> y el <b>QR de cotejo</b> en cada ticket. El <b>envío a la AEAT</b>
+            requiere certificado digital y se completará en el módulo final. Déjelo desactivado hasta entonces.
+          </p>
+          <div class="campo"><label>Activar</label>
+            <select id="cfgVfActivo" style="max-width:160px">
+              <option value="no">Desactivado</option>
+              <option value="si">Activado</option>
+            </select>
+          </div>
+          <div class="campo"><label>Entorno</label>
+            <select id="cfgVfEntorno" style="max-width:180px">
+              <option value="pruebas">Pruebas</option>
+              <option value="produccion">Producción</option>
+            </select>
+          </div>
+          <div class="campo"><label>NIF emisor</label><input id="cfgVfNif" placeholder="(vacío = NIF del negocio)"></div>
+          <div class="campo"><label>Razón social</label><input id="cfgVfRazon" placeholder="(vacío = nombre del negocio)"></div>
+          <div class="campo"><label>Serie de factura</label><input id="cfgVfSerie" style="max-width:140px" placeholder="ej: A"></div>
+          <div class="campo"><label>Tipo de factura</label>
+            <select id="cfgVfTipo" style="max-width:260px">
+              <option value="F2">F2 - Simplificada (ticket)</option>
+              <option value="F1">F1 - Factura completa</option>
+            </select>
+          </div>
+          <div class="form-acciones">
+            <button class="btn verde" id="cfgVfGuardar">💾 Guardar VeriFactu</button>
+          </div>
+
           <h2 style="margin-top:28px">Datos</h2>
           <div class="form-acciones">
+            <button class="btn verde" id="cfgPlantilla">📋 Cargar plantilla</button>
             <button class="btn azul" id="cfgExportar">⬇ Exportar copia (JSON)</button>
             <button class="btn" id="cfgImportar">⬆ Importar copia</button>
             <button class="btn rojo" id="cfgReset">⚠ Borrar todos los datos</button>
             <input type="file" id="cfgFichero" accept=".json" style="display:none">
+            <input type="file" id="cfgFicheroPlantilla" accept=".json,.txt" style="display:none">
           </div>
+          <p class="hint" style="font-size:12px;color:#777;margin:8px 2px 0">
+            <b>Cargar plantilla:</b> rellene el archivo <code>plantilla-tpv.txt</code> con sus productos,
+            precios, categorias, mesas y usuarios, y subalo aqui para configurar el TPV de cero.
+          </p>
         </div>
       </div>
 
@@ -793,6 +848,129 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 const eur = n => (Math.round(n*100)/100).toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
 const r2  = n => Math.round(n*100)/100;
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+/* =========================================================
+   MÓDULO VERI*FACTU  (preparado para ampliación futura)
+   ---------------------------------------------------------
+   VeriFactu es el sistema de facturación verificable obligatorio
+   en España (Ley Antifraude 11/2021 + RD 1007/2023 + Orden
+   HAC/1177/2024). Calendario: fabricantes de software jul-2025,
+   empresas (IS) ene-2027, autónomos jul-2027.
+
+   Cada factura/ticket debe generar un "registro de facturación"
+   inalterable con:
+     · Huella (hash SHA-256) del registro.
+     · Encadenamiento: la huella del registro ANTERIOR entra en el
+       cálculo de la huella del siguiente -> cadena inmutable.
+     · Marca temporal (FechaHoraHusoGenRegistro, ISO-8601 con huso).
+     · Código QR de cotejo que apunta a la sede de la AEAT.
+     · (Modo VERI*FACTU) envío del registro a la AEAT por servicio web.
+
+   Este módulo deja TODO el andamiaje listo. Hoy:
+     · Calcula la huella SHA-256 y la encadena (100% funcional, local).
+     · Genera la URL/contenido del QR de cotejo.
+     · Marca el registro como "pendiente de envío".
+   Pendiente de completar cuando se active de verdad (necesita
+   backend + certificado digital, no se puede firmar/enviar SOAP
+   desde el navegador):
+     · enviarAEAT(): firma XAdES y envío al servicio web SOAP.
+     · pintarQR(): dibujar el QR real (requiere librería QR).
+   IMPORTANTE: los formatos siguen las especificaciones públicas de
+   la AEAT; confírmelos contra la versión vigente antes de producción.
+   ========================================================= */
+const VeriFactu = {
+  // Endpoints oficiales de cotejo por QR de la AEAT
+  URL_QR:        "https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR",
+  URL_QR_PRUEBAS:"https://prewww2.aeat.es/wlpl/TIKE-CONT/ValidarQR",
+
+  cfg(){ return (db.config && db.config.verifactu) || {activo:false}; },
+  activo(){ return !!this.cfg().activo; },
+
+  // Huella del último ticket con registro VeriFactu (para encadenar)
+  ultimaHuella(){
+    for(let i=db.tickets.length-1;i>=0;i--){
+      if(db.tickets[i].verifactu && db.tickets[i].verifactu.huella) return db.tickets[i].verifactu.huella;
+    }
+    return ""; // primer registro de la cadena
+  },
+
+  // dd-mm-aaaa a partir de un ISO
+  _fecha(iso){ const d=new Date(iso); const p=n=>String(n).padStart(2,"0");
+    return p(d.getDate())+"-"+p(d.getMonth()+1)+"-"+d.getFullYear(); },
+
+  // ISO-8601 con huso horario (ej: 2026-06-13T12:34:56+02:00)
+  _fechaHoraHuso(d=new Date()){
+    const p=n=>String(n).padStart(2,"0");
+    const off=-d.getTimezoneOffset(), sg=off>=0?"+":"-", a=Math.abs(off);
+    return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+
+           p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds())+
+           sg+p(Math.floor(a/60))+":"+p(a%60);
+  },
+
+  // Construye el registro de alta (campos según diseño AEAT)
+  construirRegistroAlta(tk){
+    const c = db.config, v = this.cfg();
+    return {
+      IDEmisorFactura: (v.nifEmisor || c.nif || "").trim(),
+      NumSerieFactura: (v.serie || "") + tk.num,
+      FechaExpedicionFactura: this._fecha(tk.fecha),
+      TipoFactura: v.tipoFactura || "F2",      // F2 = factura simplificada (ticket)
+      CuotaTotal: r2(tk.iva).toFixed(2),
+      ImporteTotal: r2(tk.total).toFixed(2),
+      FechaHoraHusoGenRegistro: this._fechaHoraHuso(new Date())
+    };
+  },
+
+  // Cadena exacta que se somete a SHA-256 (clave=valor unidos por &)
+  cadenaHuella(reg, huellaAnterior){
+    return [
+      "IDEmisorFactura="        + reg.IDEmisorFactura,
+      "NumSerieFactura="        + reg.NumSerieFactura,
+      "FechaExpedicionFactura=" + reg.FechaExpedicionFactura,
+      "TipoFactura="            + reg.TipoFactura,
+      "CuotaTotal="             + reg.CuotaTotal,
+      "ImporteTotal="           + reg.ImporteTotal,
+      "Huella="                 + (huellaAnterior || ""),
+      "FechaHoraHusoGenRegistro="+ reg.FechaHoraHusoGenRegistro
+    ].join("&");
+  },
+
+  async sha256Hex(txt){
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(txt));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").toUpperCase();
+  },
+
+  // Contenido del QR de cotejo de la AEAT
+  urlCotejo(reg){
+    const base = this.cfg().entorno==="produccion" ? this.URL_QR : this.URL_QR_PRUEBAS;
+    const q = new URLSearchParams({
+      nif: reg.IDEmisorFactura, numserie: reg.NumSerieFactura,
+      fecha: reg.FechaExpedicionFactura, importe: reg.ImporteTotal
+    });
+    return base + "?" + q.toString();
+  },
+
+  // Punto de entrada: genera el registro VeriFactu de un ticket.
+  // Hoy calcula y encadena la huella localmente; deja el envío a la AEAT como TODO.
+  async registrar(tk){
+    if(!this.activo()) return null;
+    const reg = this.construirRegistroAlta(tk);
+    const huellaAnterior = this.ultimaHuella();
+    const huella = await this.sha256Hex(this.cadenaHuella(reg, huellaAnterior));
+    tk.verifactu = {
+      version: "1.0",
+      registro: reg,
+      huellaAnterior,
+      huella,
+      qr: this.urlCotejo(reg),
+      modo: this.cfg().entorno==="produccion" ? "produccion" : "pruebas",
+      enviadoAEAT: false,        // pasará a true cuando enviarAEAT() funcione
+      estado: "pendiente"        // pendiente | enviado | error
+    };
+    // TODO enviarAEAT(tk): firmar XAdES + envío SOAP al servicio web de la AEAT (requiere backend + certificado).
+    return tk.verifactu;
+  }
+};
 
 /* ---------- Datos iniciales ---------- */
 function datosIniciales(){
@@ -1206,7 +1384,8 @@ function datosIniciales(){
     tickets:[], numTicket:1,
     mesas:Array.from({length:10},(_,i)=>({id:"m"+(i+1), nombre:"Mesa "+(i+1), lineas:[], cliente:null})),
     cierres:[], aperturaCaja:new Date().toISOString(),
-    config:{nombre:"Bar Woodpeckers", dir:"Calle Mayor 1, Madrid", nif:"B-00000000", pie:"¡Gracias por su visita!", numMesas:10}
+    config:{nombre:"Bar Woodpeckers", dir:"Calle Mayor 1, Madrid", nif:"B-00000000", pie:"¡Gracias por su visita!", numMesas:10,
+      verifactu:{activo:false, entorno:"pruebas", nifEmisor:"", razonSocial:"", serie:"", tipoFactura:"F2"}}
   };
 }
 
@@ -1526,7 +1705,7 @@ $$("#pagoMetodos button").forEach(b=> b.onclick = ()=>{
   pagoMetodo = b.dataset.metodo;
   $$("#pagoMetodos button").forEach(x=>x.classList.toggle("sel", x===b));
 });
-$("#btnConfirmarPago").onclick = ()=>{
+$("#btnConfirmarPago").onclick = async ()=>{
   const t = totalesTicket(ticket);
   const ent = parseFloat($("#pagoInput").value) || 0;
   if(pagoMetodo==="Efectivo" && ent < t.total){ toast("Cantidad entregada insuficiente"); return; }
@@ -1537,6 +1716,8 @@ $("#btnConfirmarPago").onclick = ()=>{
     entregado: pagoMetodo==="Efectivo" ? ent : t.total,
     total:t.total, iva:t.iva, base:t.base
   };
+  // VeriFactu: genera el registro de facturación (huella encadenada + QR) si está activo
+  try{ await VeriFactu.registrar(tk); }catch(e){ console.error("VeriFactu:", e); }
   db.tickets.push(tk);
   if(mesaActual){ const m = db.mesas.find(x=>x.id===mesaActual); m.lineas=[]; m.cliente=null; }
   guardar();
@@ -1577,6 +1758,13 @@ function textoRecibo(tk){
   s += lineaRecibo("Pago: "+tk.pago, tk.entregado.toFixed(2)+" €") + "\n";
   if(tk.pago==="Efectivo") s += lineaRecibo("Cambio", (tk.entregado-tk.total).toFixed(2)+" €") + "\n";
   s += sep + "\n" + cen(c.pie) + "\n";
+  // VeriFactu: huella y enlace de cotejo (cuando el registro existe)
+  if(tk.verifactu){
+    s += sep + "\n" + cen("VERI*FACTU") + "\n";
+    s += "Huella: " + tk.verifactu.huella.slice(0,16) + "...\n";
+    s += "Cotejo: " + tk.verifactu.qr + "\n";
+    // TODO pintarQR(tk.verifactu.qr): dibujar el QR real en el recibo (requiere librería QR).
+  }
   return s;
 }
 function mostrarRecibo(tk, permitirAnular){
@@ -1894,14 +2082,36 @@ function pintarConfig(){
   const c = db.config;
   $("#cfgNombre").value=c.nombre; $("#cfgDir").value=c.dir; $("#cfgNif").value=c.nif;
   $("#cfgPie").value=c.pie; $("#cfgMesas").value=c.numMesas;
+  const v = c.verifactu || {};
+  $("#cfgVfActivo").value  = v.activo ? "si" : "no";
+  $("#cfgVfEntorno").value = v.entorno==="produccion" ? "produccion" : "pruebas";
+  $("#cfgVfNif").value     = v.nifEmisor || "";
+  $("#cfgVfRazon").value   = v.razonSocial || "";
+  $("#cfgVfSerie").value   = v.serie || "";
+  $("#cfgVfTipo").value    = v.tipoFactura || "F2";
 }
 $("#cfgGuardar").onclick = ()=>{
   db.config = {
+    ...db.config,   // conserva el bloque verifactu y cualquier otro ajuste
     nombre:$("#cfgNombre").value.trim()||"Bar Woodpeckers", dir:$("#cfgDir").value.trim(),
     nif:$("#cfgNif").value.trim(), pie:$("#cfgPie").value.trim(),
     numMesas:Math.max(0, Math.min(50, parseInt($("#cfgMesas").value)||10))
   };
   guardar(); toast("Configuración guardada");
+};
+$("#cfgVfGuardar").onclick = ()=>{
+  const activo = $("#cfgVfActivo").value==="si";
+  const entorno = $("#cfgVfEntorno").value;
+  if(activo && entorno==="produccion" &&
+     !confirm("⚠ Va a activar VeriFactu en PRODUCCIÓN. El envío a la AEAT aún no está implementado (requiere certificado digital). ¿Continuar igualmente?")) return;
+  db.config.verifactu = {
+    activo, entorno,
+    nifEmisor:$("#cfgVfNif").value.trim(),
+    razonSocial:$("#cfgVfRazon").value.trim(),
+    serie:$("#cfgVfSerie").value.trim(),
+    tipoFactura:$("#cfgVfTipo").value
+  };
+  guardar(); toast("Configuración VeriFactu guardada");
 };
 $("#cfgExportar").onclick = ()=>{
   const blob = new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
@@ -1909,6 +2119,83 @@ $("#cfgExportar").onclick = ()=>{
   a.href = URL.createObjectURL(blob);
   a.download = "tpv-copia-" + new Date().toISOString().slice(0,10) + ".json";
   a.click(); URL.revokeObjectURL(a.href);
+};
+/* ---- Plantilla de configuracion (texto -> JSON -> db) ---- */
+function parseJSONC(text){
+  // Permite comentarios y comas finales en la plantilla de texto
+  let t = text.replace(/\/\*[\s\S]*?\*\//g, "");          // bloques /* */
+  t = t.replace(/^\s*\/\/.*$/gm, "");                       // lineas // ...
+  t = t.replace(/,(\s*[}\]])/g, "$1");                      // comas finales sobrantes
+  return JSON.parse(t);
+}
+function construirDesdePlantilla(p){
+  const n = p.negocio || {};
+  // Usuarios
+  const usuarios = (p.usuarios||[]).map((u,i)=>({
+    id:"u"+(i+1), nombre:(u.nombre||"Usuario "+(i+1)).trim(),
+    rol:(u.rol==="admin"?"admin":"camarero"), pin:(u.pin||"").toString(), icono:u.icono||"👤"
+  }));
+  if(!usuarios.length) usuarios.push({id:"u1", nombre:"Admin", rol:"admin", pin:"", icono:"🔑"});
+  // Categorias
+  const categorias = (p.categorias||[]).map((c,i)=>({
+    id:(c.id||c.nombre||("cat"+(i+1))).toString().trim(),
+    nombre:(c.nombre||c.id||"Categoria "+(i+1)).toString().trim(), emoji:c.emoji||"🗂️"
+  }));
+  const emojiCat = {}; categorias.forEach(c=>emojiCat[c.id]=c.emoji);
+  // Productos
+  const usadas = new Set();
+  const productos = (p.productos||[]).map((pr,i)=>{
+    const ref = (pr.ref!=null && pr.ref!=="") ? pr.ref.toString() : ("P"+(i+1));
+    let id = "p"+ref; while(usadas.has(id)) id += "_"; usadas.add(id);
+    const precio = Number(pr.precio)||0;
+    const cat = (pr.categoria||pr.cat||(categorias[0]&&categorias[0].id)||"").toString();
+    return {
+      id, ref, nombre:(pr.nombre||"Producto "+(i+1)).toString().trim(),
+      barcode:(pr.barcode||ref).toString(),
+      compra: pr.compra!=null ? Number(pr.compra)||0 : precio,
+      precio, iva: pr.iva!=null ? Number(pr.iva) : 10,
+      cat, emoji: pr.emoji || emojiCat[cat] || "📦"
+    };
+  });
+  // Mesas
+  const numMesas = Math.max(0, Math.min(50, parseInt(n.numMesas)||10));
+  const mesas = Array.from({length:numMesas},(_,i)=>({id:"m"+(i+1), nombre:"Mesa "+(i+1), lineas:[], cliente:null}));
+  return {
+    usuarios, categorias, productos, clientes:[],
+    tickets:[], numTicket:1, mesas, cierres:[], aperturaCaja:new Date().toISOString(),
+    config:{
+      nombre:(n.nombre||"Mi Negocio").toString().trim(),
+      dir:(n.direccion||n.dir||"").toString().trim(),
+      nif:(n.nif||"").toString().trim(),
+      pie:(n.pie||"¡Gracias por su visita!").toString().trim(),
+      numMesas,
+      verifactu:{
+        activo: !!(p.verifactu && p.verifactu.activo),
+        entorno: (p.verifactu && p.verifactu.entorno) || "pruebas",
+        nifEmisor: (p.verifactu && (p.verifactu.nifEmisor||p.verifactu.nif) || n.nif || "").toString().trim(),
+        razonSocial: (p.verifactu && p.verifactu.razonSocial || n.nombre || "").toString().trim(),
+        serie: (p.verifactu && p.verifactu.serie || "").toString().trim(),
+        tipoFactura: (p.verifactu && p.verifactu.tipoFactura) || "F2"
+      }
+    }
+  };
+}
+$("#cfgPlantilla").onclick = ()=>$("#cfgFicheroPlantilla").click();
+$("#cfgFicheroPlantilla").onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const p = parseJSONC(r.result);
+      if(!p.productos && !p.negocio) throw new Error("formato");
+      if(!confirm("Esto creara la configuracion del TPV con la plantilla y reemplazara los datos actuales (productos, mesas, usuarios...). ¿Continuar?")) return;
+      db = construirDesdePlantilla(p); guardar();
+      toast("Plantilla cargada ("+db.productos.length+" productos)");
+      pintarConfig(); pintarLogin();
+    }catch(err){ console.error(err); toast("Plantilla no valida: revise el formato"); }
+  };
+  r.readAsText(f);
+  e.target.value = "";
 };
 $("#cfgImportar").onclick = ()=>$("#cfgFichero").click();
 $("#cfgFichero").onchange = e=>{
