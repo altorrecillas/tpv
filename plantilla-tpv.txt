@@ -1,0 +1,112 @@
+/* ============================================================
+   PLANTILLA DE CONFIGURACION DEL TPV
+   ============================================================
+
+   COMO USAR ESTA PLANTILLA
+   ------------------------
+   1) Rellene los datos entre comillas "" o los numeros que aparecen
+      mas abajo. NO borre las comas ni las llaves { } [ ].
+   2) Guarde el archivo. Puede dejarlo como .txt o renombrarlo a .json,
+      da igual: el TPV admite los dos.
+   3) En el TPV vaya a:  ⚙️ Configuracion  ->  "Cargar plantilla"
+      y seleccione este archivo. Confirme y listo.
+
+   REGLAS RAPIDAS
+   --------------
+   - Las lineas que empiezan por  //  o van entre  / * ... * /  son
+     comentarios y se ignoran (no hace falta borrarlos).
+   - "iva" suele ser 10 (hosteleria) o 21 (general). Si no lo pone, sera 10.
+   - "precio" es el precio de VENTA (con punto decimal, ej: 1.50).
+   - "compra" es opcional (precio de coste); si no lo pone se usa el de venta.
+   - Cada producto debe indicar una "categoria" que exista en la lista
+     de categorias (use el mismo "id").
+   - "ref" / codigo de barras: si no lo pone se genera solo.
+   - Puede anadir tantos usuarios, categorias y productos como quiera:
+     copie un bloque entero { ... } y pegue otro debajo separado por coma.
+   ============================================================ */
+{
+
+  /* ---- DATOS DEL NEGOCIO (salen en el ticket) ---- */
+  "negocio": {
+    "nombre": "Mi Bar",
+    "direccion": "Calle Mayor 1, Madrid",
+    "nif": "B-00000000",
+    "pie": "¡Gracias por su visita!",
+    "numMesas": 10
+  },
+
+  /* ---- ZONAS DEL LOCAL ----
+     Las zonas que aparecen como pestañas en el plano de mesas
+     (Barra, Terraza, Salón, Comedor...). Escriba el nombre tal cual. */
+  "zonas": ["Barra", "Terraza", "Salón"],
+
+  /* ---- MESAS ----
+     Cada mesa con su nombre y la zona a la que pertenece (debe
+     coincidir con una de las de arriba). El TPV las coloca solas
+     en el plano; luego podrá arrastrarlas para ordenarlas.
+     Si NO pone esta lista, se crean automaticamente las del campo
+     "numMesas" de arriba en la primera zona. */
+  "mesas": [
+    { "nombre": "Barra 1",  "zona": "Barra" },
+    { "nombre": "Barra 2",  "zona": "Barra" },
+    { "nombre": "Terraza 1","zona": "Terraza" },
+    { "nombre": "Terraza 2","zona": "Terraza" },
+    { "nombre": "Terraza 3","zona": "Terraza" },
+    { "nombre": "Mesa 1",   "zona": "Salón" },
+    { "nombre": "Mesa 2",   "zona": "Salón" },
+    { "nombre": "Mesa 3",   "zona": "Salón" },
+    { "nombre": "Mesa 4",   "zona": "Salón" }
+  ],
+
+  /* ---- VERI*FACTU (facturacion verificable, obligatorio en Espana) ----
+     Dejelo "activo": false hasta que el modulo este completo y tenga
+     el certificado digital. Cuando se active:
+       entorno:    "pruebas" o "produccion".
+       nifEmisor:  NIF del titular (si se deja "", usa el del negocio).
+       razonSocial:nombre fiscal del emisor.
+       serie:      prefijo de serie de factura (ej: "A" -> A1, A2...).
+       tipoFactura:"F2" = factura simplificada (ticket de bar). */
+  "verifactu": {
+    "activo": false,
+    "entorno": "pruebas",
+    "nifEmisor": "",
+    "razonSocial": "",
+    "serie": "",
+    "tipoFactura": "F2"
+  },
+
+  /* ---- USUARIOS / EMPLEADOS ----
+     rol: "admin" (acceso total) o "camarero".
+     pin: codigo para iniciar sesion (dejelo "" si no quiere pin).
+     icono: cualquier emoji. */
+  "usuarios": [
+    { "nombre": "Admin",      "rol": "admin",    "pin": "",     "icono": "🔑" },
+    { "nombre": "Encargado",  "rol": "admin",    "pin": "1234", "icono": "🧑‍💼" },
+    { "nombre": "Camarero 1", "rol": "camarero", "pin": "",     "icono": "🧑‍🍳" }
+  ],
+
+  /* ---- CATEGORIAS ----
+     id: nombre corto sin espacios ni acentos (se usa en los productos).
+     nombre: como se vera en pantalla.  emoji: opcional. */
+  "categorias": [
+    { "id": "cafes",    "nombre": "CAFES",    "emoji": "☕" },
+    { "id": "refrescos","nombre": "REFRESCOS","emoji": "🥤" },
+    { "id": "cervezas", "nombre": "CERVEZAS", "emoji": "🍺" },
+    { "id": "tapas",    "nombre": "TAPAS",    "emoji": "🍤" }
+  ],
+
+  /* ---- PRODUCTOS ----
+     categoria: debe coincidir con un "id" de la lista de categorias.
+     emoji: opcional (si no lo pone usa el de la categoria). */
+  "productos": [
+    { "ref": "1001", "nombre": "CAFE SOLO",       "precio": 1.20, "iva": 10, "categoria": "cafes",     "emoji": "☕" },
+    { "ref": "1002", "nombre": "CAFE CON LECHE",  "precio": 1.40, "iva": 10, "categoria": "cafes",     "emoji": "☕" },
+    { "ref": "2001", "nombre": "COCA-COLA",       "precio": 2.00, "iva": 10, "categoria": "refrescos", "emoji": "🥤" },
+    { "ref": "2002", "nombre": "AGUA MINERAL",    "precio": 1.50, "iva": 10, "categoria": "refrescos", "emoji": "💧" },
+    { "ref": "3001", "nombre": "CAÑA",            "precio": 1.80, "iva": 10, "categoria": "cervezas",  "emoji": "🍺" },
+    { "ref": "3002", "nombre": "CERVEZA TERCIO",  "precio": 2.50, "iva": 10, "categoria": "cervezas",  "emoji": "🍻" },
+    { "ref": "4001", "nombre": "TORTILLA",        "precio": 3.00, "iva": 10, "categoria": "tapas",     "emoji": "🍳" },
+    { "ref": "4002", "nombre": "PATATAS BRAVAS",  "precio": 4.50, "iva": 10, "categoria": "tapas",     "emoji": "🍤" }
+  ]
+
+}

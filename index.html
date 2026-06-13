@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>TPV - Punto de Venta</title>
+<!-- PWA instalable -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#5a9e2f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TPV">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{
   --verde:#6fb245; --verde-osc:#4e8f2c; --verde-claro:#a8d08d;
@@ -21,6 +30,39 @@ button{font-family:inherit; cursor:pointer;}
 input,select,textarea{font-family:inherit; font-size:14px; padding:6px 8px; border:1px solid var(--borde); border-radius:3px; background:#fff;}
 input:focus,select:focus{outline:2px solid var(--azul); outline-offset:-1px;}
 
+/* ===== Modo oscuro ===== */
+:root.tema-oscuro{
+  --gris:#3a3a42; --gris-osc:#4c4c56; --panel:#26262c; --borde:#43434c; --texto:#e6e6e6;
+  --azul-claro:#27384f; --verde-claro:#33502a;
+}
+.tema-oscuro body{ background:#1c1c20; }
+.tema-oscuro input,.tema-oscuro select,.tema-oscuro textarea{ background:#2c2c33; color:#e6e6e6; border-color:#4c4c56; }
+.tema-oscuro #content{ background:#1c1c20; }
+.tema-oscuro .menu-panel .item{ background:#2c2c33; color:#e6e6e6; }
+.tema-oscuro .btn,
+.tema-oscuro #cats button,
+.tema-oscuro #kpGrid button,
+.tema-oscuro #ticketLineas th,
+.tema-oscuro table.datos th{ background:linear-gradient(to bottom,#3a3a44,#2b2b33); color:#dfe6f2; }
+.tema-oscuro #ticketLineas td{ border-bottom-color:#33333a; }
+.tema-oscuro table.datos td{ border-color:#3a3a42; }
+.tema-oscuro .lista-items .item{ background:#26262c; color:#e6e6e6; border-bottom-color:#33333a; }
+.tema-oscuro #prods button{ background:linear-gradient(to bottom,#33333c,#26262c); color:#e6e6e6; }
+.tema-oscuro .mesa{ background:linear-gradient(to bottom,#33333c,#26262c); color:#dfe6f2; }
+.tema-oscuro #plano{ background:#1f241c; }
+.tema-oscuro #kpDisplay{ background:#2c2c33; color:#dfe6f2; }
+.tema-oscuro .modal{ background:#26262c; color:#e6e6e6; }
+.tema-oscuro #login{ background:#1c1c20; }
+.tema-oscuro #recibo{ background:#2c2c33; color:#e6e6e6; border-color:#555; }
+.tema-oscuro #statusbar .chip{ background:#2c2c33; color:#e6e6e6; }
+.tema-oscuro .zona-tab{ background:#2c2c33; color:#e6e6e6; }
+.tema-oscuro .mesa .mas{ background:rgba(0,0,0,.35); color:#ddd; }
+/* fuerza legibilidad de los títulos azul oscuro puestos en línea */
+.tema-oscuro [style*="2d4a73"]{ color:#cdd7e6 !important; }
+.tema-oscuro .form-panel h2{ color:#cdd7e6; }
+.tema-oscuro #login .marca h1{ color:#e6e6e6; }
+.tema-oscuro #login .desc{ color:#9a9a9a; }
+
 /* ===== Barra de título estilo Openbravo ===== */
 #titlebar{
   height:34px; display:flex; align-items:center; justify-content:space-between; padding:0 10px;
@@ -30,12 +72,13 @@ input:focus,select:focus{outline:2px solid var(--azul); outline-offset:-1px;}
 #titlebar .logo{display:flex; align-items:center; gap:8px;}
 #titlebar .logo .b{width:20px;height:20px;border-radius:50%;background:#fff;color:#5a9e2f;display:flex;align-items:center;justify-content:center;font-size:13px;}
 #titlebar .tb-right{display:flex; align-items:center; gap:10px;}
-#btnMaximizar{
+#btnMaximizar, #btnInstalar, #btnCajon, #btnTema{
   background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.5); color:#fff;
   font-weight:bold; font-size:12px; padding:3px 10px; border-radius:5px; cursor:pointer;
   text-shadow:0 1px 2px rgba(0,0,0,.4);
 }
-#btnMaximizar:hover{background:rgba(255,255,255,.35);}
+#btnMaximizar:hover, #btnInstalar:hover, #btnCajon:hover, #btnTema:hover{background:rgba(255,255,255,.35);}
+#btnInstalar{background:rgba(255,255,255,.32);}
 #infobar{
   height:30px; background:linear-gradient(to bottom,#ffffff,#e9f3dc); border-bottom:1px solid var(--borde);
   display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; color:#555; flex:0 0 auto;
@@ -130,6 +173,8 @@ input:focus,select:focus{outline:2px solid var(--azul); outline-offset:-1px;}
   padding:6px 8px; border-bottom:1px solid var(--borde); font-size:12px; color:#555;
 }
 #ticketLineas td{padding:7px 8px; border-bottom:1px solid #eee;}
+#ticketLineas td .nota{font-size:11px; color:var(--naranja); font-style:italic; margin-top:2px;}
+#ticketLineas tr.sel td .nota{color:#ffe;}
 #ticketLineas tr.sel td{background:var(--azul); color:#fff;}
 #ticketLineas .num{text-align:right; white-space:nowrap;}
 #totales{
@@ -186,19 +231,38 @@ input:focus,select:focus{outline:2px solid var(--azul); outline-offset:-1px;}
 
 /* ===== Mesas ===== */
 #plano{
-  flex:1; overflow-y:auto; padding:20px; background:#eef5e9;
-  display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:18px; align-content:start;
+  flex:1; overflow:auto; padding:8px; background:#eef5e9; position:relative;
 }
 .mesa{
-  border:1px solid var(--borde); border-radius:10px; min-height:110px; padding:10px;
+  position:absolute; width:124px; height:96px; min-height:0; padding:8px; overflow:hidden;
+  border:1px solid var(--borde); border-radius:12px;
   background:linear-gradient(to bottom,#ffffff,#dce6f2); display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:6px; font-weight:bold; color:#2d4a73;
-  box-shadow:0 2px 5px rgba(0,0,0,.12); cursor:pointer;
+  align-items:center; justify-content:center; gap:3px; font-weight:bold; color:#2d4a73;
+  box-shadow:0 2px 5px rgba(0,0,0,.12); cursor:pointer; user-select:none;
 }
-.mesa .icono{font-size:30px;}
+.mesa.f-redonda{border-radius:50%;}
+.mesa.f-cuadrada{border-radius:12px;}
+.mesa.f-rect{border-radius:12px;}
+.mesa .resize{position:absolute; right:2px; bottom:2px; width:16px; height:16px; border-radius:3px;
+  background:var(--azul); opacity:.85; cursor:nwse-resize; touch-action:none;}
+.mesa .icono{font-size:28px;}
+.mesa .mnom{text-align:center; line-height:1.1;}
 .mesa.ocupada{background:linear-gradient(to bottom,#b8e09a,#8cc63f); border-color:var(--verde-osc); color:#234d0f;}
 .mesa .info{font-size:11px; font-weight:normal;}
-#planoTitulo{font-size:26px; color:var(--verde-osc); font-weight:bold; text-align:center; padding:12px 0 0;}
+.mesa .mas{position:absolute; top:3px; right:3px; width:24px; height:24px; line-height:1; padding:0;
+  border:1px solid var(--borde); border-radius:5px; background:rgba(255,255,255,.75); color:#555; font-weight:bold;}
+.mesa.arrastrando{opacity:.85; z-index:20; box-shadow:0 8px 22px rgba(0,0,0,.35);}
+#plano.editando{background:repeating-linear-gradient(0deg,#eef5e9,#eef5e9 19px,#e3eede 20px),repeating-linear-gradient(90deg,#eef5e9,#eef5e9 19px,#e3eede 20px);}
+#plano.editando .mesa{cursor:move; touch-action:none; outline:2px dashed var(--azul); outline-offset:2px;}
+#zonaTabs{display:flex; gap:6px; flex-wrap:wrap;}
+.zona-tab{padding:6px 14px; border:1px solid var(--borde); border-radius:16px; background:#f4f4f0; font-weight:bold; font-size:13px;}
+.zona-tab.activo{background:linear-gradient(to bottom,#9ed46e,#6fb245); color:#fff; border-color:var(--verde-osc);}
+.zona-tab .badge{background:var(--rojo); color:#fff; border-radius:10px; padding:0 6px; font-size:11px; margin-left:4px;}
+#planoEditBar{flex:0 0 auto; padding:8px 10px; background:var(--panel); border-bottom:1px solid var(--borde); display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+#btnEditarPlano.activo{background:linear-gradient(to bottom,#9ed46e,#6fb245); color:#fff; border-color:var(--verde-osc);}
+.zona-row{display:flex; gap:8px; align-items:center; margin-bottom:6px;}
+.zona-row input{flex:1;}
+#mesaAccBotones .btn{justify-content:flex-start;}
 
 /* ===== Tablas administración ===== */
 .admin-layout{flex:1; display:flex; min-height:0;}
@@ -246,7 +310,24 @@ table.datos .num{text-align:right;}
 .modal .pie{padding:12px 16px; border-top:1px solid var(--gris); display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;}
 
 /* Pago */
-#pagoTotal{font-size:34px; font-weight:bold; color:var(--verde-osc); text-align:center; margin-bottom:12px;}
+#pagoTotal{font-size:34px; font-weight:bold; color:var(--verde-osc); text-align:center; margin-bottom:2px;}
+#pagoEtiqueta{text-align:center; color:var(--azul); font-weight:bold; font-size:14px; min-height:18px; margin-bottom:10px;}
+/* Dividir cuenta */
+#divTabs{display:flex; gap:6px; margin-bottom:12px;}
+#divTabs button{flex:1; padding:10px; border:1px solid var(--borde); border-radius:6px; background:#f4f4f0; font-weight:bold; cursor:pointer;}
+#divTabs button.sel{background:linear-gradient(to bottom,#9ed46e,#6fb245); color:#fff; border-color:var(--verde-osc);}
+#divTabs button:disabled{opacity:.4; cursor:not-allowed;}
+#divInfo{text-align:center; margin-bottom:12px; font-size:15px; color:#444;}
+.div-personas{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px;}
+.div-personas input{font-size:24px; width:70px; text-align:center;}
+#divPorPersona{text-align:center; font-size:18px; color:var(--verde-osc);}
+#divLineas{max-height:300px; overflow-y:auto; border:1px solid var(--gris); border-radius:6px;}
+.div-linea{display:flex; align-items:center; gap:10px; padding:8px 10px; border-bottom:1px solid #eee;}
+.div-linea .nom{flex:1; min-width:0;}
+.div-linea .ud{display:flex; align-items:center; gap:8px; font-weight:bold;}
+.div-linea .ud button{width:34px; height:34px; border:1px solid var(--borde); border-radius:5px; background:#f4f4f0; font-size:16px; cursor:pointer;}
+.div-linea .imp{min-width:70px; text-align:right; font-weight:bold; color:var(--verde-osc);}
+#divSelTotal{text-align:right; font-size:18px; margin-top:10px; padding-right:4px;}
 #pagoMetodos{display:flex; gap:10px; justify-content:center; margin-bottom:14px; flex-wrap:wrap;}
 #pagoMetodos button{
   padding:12px 18px; border:1px solid var(--borde); border-radius:6px; font-size:14px; font-weight:bold;
@@ -257,6 +338,11 @@ table.datos .num{text-align:right;}
 #pagoEntregado input{font-size:22px; width:140px; text-align:right;}
 #pagoRapido{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-bottom:10px;}
 #pagoRapido button{padding:8px 12px; border:1px solid var(--borde); border-radius:4px; background:#f4f4f0; font-weight:bold;}
+#pagoMixto{margin-bottom:10px;}
+.mix-fila{display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:8px;}
+.mix-fila label{width:110px; text-align:right; font-weight:bold;}
+.mix-fila input{font-size:20px; width:130px; text-align:right;}
+#mixResto{text-align:center; font-size:15px; color:#444; margin-top:4px;}
 #pagoCambio{text-align:center; font-size:18px;}
 #pagoCambio b{color:var(--azul); font-size:24px;}
 
@@ -274,6 +360,7 @@ table.datos .num{text-align:right;}
   padding:10px 22px; border-radius:20px; font-size:13px; opacity:0; transition:opacity .3s; z-index:99; pointer-events:none;
 }
 #toast.visible{opacity:.95;}
+#cajonPrint{display:none;}
 
 /* ===== Impresión (rollo térmico 80 mm) ===== */
 @page{ size:80mm auto; margin:0; }
@@ -300,6 +387,10 @@ table.datos .num{text-align:right;}
     white-space:pre-wrap;
     word-break:break-word;
   }
+  /* Apertura de cajón por impresión: imprime solo un ticket mínimo */
+  body.print-cajon *{visibility:hidden !important; display:none !important;}
+  body.print-cajon #cajonPrint{display:block !important; visibility:visible !important;
+    position:absolute; inset:0; text-align:center; font-family:"Courier New",monospace; font-size:10pt; padding:4mm 0;}
 }
 
 /* Barra de pestañas móvil, total del teclado y botón cobrar de la mesa (ocultos en escritorio) */
@@ -435,6 +526,9 @@ table.datos .num{text-align:right;}
   #kpGrid button{min-height:46px; font-size:17px;}
 }
 </style>
+<!-- Estilo de impresión dinámico (ancho de papel) — lo rellena aplicarConfigImpresion() -->
+<style id="estiloImpresion"></style>
+<script>try{if(localStorage.getItem("tpv_tema")==="oscuro")document.documentElement.classList.add("tema-oscuro");}catch(e){}</script>
 </head>
 <body>
 
@@ -465,6 +559,9 @@ table.datos .num{text-align:right;}
     <div class="logo"><button id="btnMenu">☰</button><span class="b">b</span> TPV - Punto de Venta</div>
     <div class="tb-right">
       <span id="reloj"></span>
+      <button id="btnTema" title="Modo claro/oscuro">🌙</button>
+      <button id="btnCajon" title="Abrir cajón portamonedas">💰 Cajón</button>
+      <button id="btnInstalar" title="Instalar como aplicación" style="display:none">⬇ Instalar app</button>
       <button id="btnMaximizar" title="Maximizar (ESC para salir)">⛶ Maximizar</button>
     </div>
   </div>
@@ -478,6 +575,7 @@ table.datos .num{text-align:right;}
         <button class="item" data-vista="mesas">🍽️ Mesas</button>
         <button class="item" data-vista="historial">📋 Editar ventas</button>
         <button class="item" data-vista="caja">💶 Cierre de caja</button>
+        <button class="item" data-vista="informes">📊 Informes</button>
       </div>
       <div class="menu-panel" data-rol="admin">
         <h3>Administración</h3>
@@ -508,6 +606,7 @@ table.datos .num{text-align:right;}
               <button class="btn" id="btnCliente">👤 <span id="lblCliente">Cliente</span></button>
               <button class="btn" id="btnMenosUd">➖</button>
               <button class="btn" id="btnMasUd">➕</button>
+              <button class="btn" id="btnNotaLinea">📝 Nota</button>
               <button class="btn rojo" id="btnBorrarLinea">🗑️ Línea</button>
               <button class="btn rojo" id="btnCancelarTicket">✖ Cancelar</button>
             </div>
@@ -551,10 +650,15 @@ table.datos .num{text-align:right;}
       <div class="vista" id="vMesas">
         <div class="toolbar">
           <button class="btn azul" id="btnLlevar">🛍️ Venta directa / Para llevar</button>
+          <div id="zonaTabs"></div>
           <span style="flex:1"></span>
-          <span style="font-size:12px;color:#777">Pulse una mesa para abrir su ticket</span>
+          <button class="btn" id="btnEditarPlano">✏️ Editar plano</button>
         </div>
-        <div id="planoTitulo">Restaurante</div>
+        <div id="planoEditBar">
+          <button class="btn verde" id="btnAddMesa">＋ Mesa</button>
+          <button class="btn" id="btnZonas">🗂️ Zonas</button>
+          <span style="font-size:12px;color:#777">Arrastra las mesas para colocarlas. ⋮ para opciones.</span>
+        </div>
         <div id="plano"></div>
       </div>
 
@@ -589,6 +693,19 @@ table.datos .num{text-align:right;}
             <tbody></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- ===== INFORMES ===== -->
+      <div class="vista" id="vInformes">
+        <div class="toolbar">
+          <b style="color:#2d4a73">Informe de ventas</b><span style="flex:1"></span>
+          <label style="font-size:12px;color:#555">Desde</label><input type="date" id="infDesde">
+          <label style="font-size:12px;color:#555">Hasta</label><input type="date" id="infHasta">
+          <button class="btn" id="infHoy">Hoy</button>
+          <button class="btn" id="infMes">Mes</button>
+          <button class="btn azul" id="infExport">⬇ Exportar CSV</button>
+        </div>
+        <div class="form-panel" id="infContenido"></div>
       </div>
 
       <!-- ===== CLIENTES ===== -->
@@ -719,6 +836,45 @@ table.datos .num{text-align:right;}
             <button class="btn verde" id="cfgGuardar">💾 Guardar</button>
           </div>
 
+          <h2 style="margin-top:28px">Impresión y cajón</h2>
+          <div class="campo"><label>Impresión automática</label>
+            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer">
+              <input id="cfgAutoImprimir" type="checkbox" style="width:18px;height:18px">
+              Imprimir el ticket al cobrar en efectivo o mixto (abre el cajón vía impresora)
+            </label>
+          </div>
+          <div class="campo"><label></label>
+            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer">
+              <input id="cfgImprimirTarjeta" type="checkbox" style="width:18px;height:18px">
+              Imprimir también el ticket en pagos con tarjeta
+            </label>
+          </div>
+          <div class="campo"><label>Ancho de papel</label>
+            <select id="cfgPapel" style="max-width:140px">
+              <option value="80">80 mm</option>
+              <option value="58">58 mm</option>
+            </select>
+          </div>
+          <div class="campo"><label>Copias del ticket</label>
+            <select id="cfgCopias" style="max-width:100px">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
+          <div class="campo"><label>Comando cajón</label>
+            <input id="cfgCajonCmd" placeholder="opcional · ej: opencash://" style="max-width:260px">
+          </div>
+          <div style="font-size:12px;color:#888;margin:-4px 0 12px 140px">
+            Protocolo de Windows que abre el cajón sin papel (p. ej. la herramienta «Open Cash Button» de APPROX).
+            Si se rellena, el botón 💰 Cajón lo usará en vez de imprimir.
+          </div>
+          <div class="form-acciones">
+            <button class="btn verde" id="cfgCajonGuardar">💾 Guardar</button>
+            <button class="btn azul" id="cfgProbarImpresion">🖨️ Probar impresión</button>
+            <button class="btn" id="cfgProbarCajon">💰 Probar cajón</button>
+          </div>
+
           <h2 style="margin-top:28px">VERI*FACTU</h2>
           <p class="hint" style="font-size:12px;color:#777;margin:0 2px 10px">
             Sistema de facturación verificable (obligatorio en España). El TPV ya genera la
@@ -780,31 +936,107 @@ table.datos .num{text-align:right;}
 <div id="overlay">
   <!-- Pago -->
   <div class="modal" id="modalPago" style="display:none">
-    <h2>Pago <button data-cerrar>✕</button></h2>
+    <h2>Pago <button id="pagoCerrarX">✕</button></h2>
     <div class="cuerpo">
       <div id="pagoTotal">0,00 €</div>
+      <div id="pagoEtiqueta"></div>
       <div id="pagoMetodos">
         <button data-metodo="Efectivo" class="sel"><span style="font-size:22px">💵</span>Efectivo</button>
         <button data-metodo="Tarjeta"><span style="font-size:22px">💳</span>Tarjeta</button>
+        <button data-metodo="Mixto"><span style="font-size:22px">➗</span>Mixto</button>
       </div>
       <div id="pagoEntregado"><label>Entregado:</label><input id="pagoInput" type="number" step="0.01" min="0"> €</div>
       <div id="pagoRapido"></div>
+      <div id="pagoMixto" style="display:none">
+        <div class="mix-fila"><label>💵 Efectivo</label><input id="mixEfectivo" type="number" step="0.01" min="0"> €</div>
+        <div class="mix-fila"><label>💳 Tarjeta</label><input id="mixTarjeta" type="number" step="0.01" min="0"> €</div>
+        <div id="mixResto"></div>
+      </div>
       <div id="pagoCambio">Cambio: <b id="pagoCambioVal">0,00 €</b></div>
     </div>
     <div class="pie">
-      <button class="btn" data-cerrar>Cancelar</button>
+      <button class="btn azul" id="btnDividir">➗ Dividir cuenta</button>
+      <button class="btn" id="pagoCancelar">Cancelar</button>
       <button class="btn verde" id="btnConfirmarPago">✔ Aceptar</button>
+    </div>
+  </div>
+
+  <!-- Acciones de mesa -->
+  <div class="modal" id="modalMesaAcc" style="display:none;max-width:420px">
+    <h2><span id="mesaAccTitulo">Mesa</span> <button data-cerrar>✕</button></h2>
+    <div class="cuerpo">
+      <div id="mesaAccBotones" class="form-acciones" style="flex-direction:column;align-items:stretch;gap:8px"></div>
+      <div id="mesaAccLista" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Gestión de zonas -->
+  <div class="modal" id="modalZonas" style="display:none;max-width:420px">
+    <h2>Zonas del local <button data-cerrar>✕</button></h2>
+    <div class="cuerpo">
+      <div id="zonasLista"></div>
+      <div style="display:flex; gap:6px; margin-top:10px">
+        <input id="zonaNueva" placeholder="Nueva zona (ej: Terraza)..." style="flex:1">
+        <button class="btn verde" id="zonaAddBtn">＋ Añadir</button>
+      </div>
+    </div>
+    <div class="pie"><button class="btn verde" data-cerrar>Cerrar</button></div>
+  </div>
+
+  <!-- Nota / modificador de línea -->
+  <div class="modal" id="modalNota" style="display:none;max-width:440px">
+    <h2>Nota / modificador <button data-cerrar>✕</button></h2>
+    <div class="cuerpo">
+      <p id="notaLineaNombre" style="font-weight:bold;margin-bottom:8px;color:#2d4a73"></p>
+      <textarea id="notaTexto" rows="3" style="width:100%" placeholder="Ej: sin hielo, poco hecho, sin gluten, para llevar..."></textarea>
+      <div id="notaSugerencias" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div class="pie">
+      <button class="btn rojo" id="notaQuitar">Quitar nota</button>
+      <button class="btn" data-cerrar>Cancelar</button>
+      <button class="btn verde" id="notaGuardar">Guardar</button>
+    </div>
+  </div>
+
+  <!-- Dividir cuenta -->
+  <div class="modal" id="modalDividir" style="display:none">
+    <h2>Dividir cuenta <button id="divCerrarX">✕</button></h2>
+    <div class="cuerpo">
+      <div id="divTabs">
+        <button id="divTabIguales" class="sel">➗ A partes iguales</button>
+        <button id="divTabProductos">🧾 Por productos</button>
+      </div>
+      <div id="divInfo"></div>
+      <div id="divIguales">
+        <div class="div-personas">
+          <label>Personas:</label>
+          <button class="btn" id="divMenos">➖</button>
+          <input id="divPersonas" type="number" min="2" value="2">
+          <button class="btn" id="divMas">➕</button>
+        </div>
+        <div id="divPorPersona"></div>
+      </div>
+      <div id="divProductos" style="display:none">
+        <div id="divLineas"></div>
+        <div id="divSelTotal"></div>
+      </div>
+    </div>
+    <div class="pie">
+      <button class="btn" id="divCancelar">Cancelar</button>
+      <button class="btn verde" id="divAccion">Cobrar</button>
     </div>
   </div>
 
   <!-- Recibo -->
   <div class="modal" id="modalRecibo" style="display:none">
-    <h2>Ticket <button data-cerrar>✕</button></h2>
+    <h2>Ticket <button id="reciboCerrarX">✕</button></h2>
     <div class="cuerpo"><div id="recibo"></div></div>
     <div class="pie">
       <button class="btn rojo" id="btnAnularTicket" style="display:none">🗑️ Anular ticket</button>
+      <button class="btn rojo" id="btnCancelarSplit" style="display:none">✖ Cancelar división</button>
       <button class="btn azul" id="btnImprimir">🖨️ Imprimir</button>
-      <button class="btn verde" data-cerrar>Cerrar</button>
+      <button class="btn verde" id="btnContinuarSplit" style="display:none">➡ Continuar</button>
+      <button class="btn verde" id="btnCerrarRecibo">Cerrar</button>
     </div>
   </div>
 
@@ -836,11 +1068,13 @@ table.datos .num{text-align:right;}
 </div>
 
 <div id="toast"></div>
+<!-- Ticket mínimo para abrir el cajón por impresión (driver con "abrir cajón al imprimir") -->
+<div id="cajonPrint">·· Apertura de cajón ··</div>
 
 <script>
 "use strict";
 /* =========================================================
-   TPV en un solo archivo — base de datos en localStorage
+   TPV en un solo archivo — base de datos en IndexedDB (con respaldo en localStorage)
    ========================================================= */
 const DB_KEY = "tpv_db_v1";
 const $  = s => document.querySelector(s);
@@ -969,6 +1203,66 @@ const VeriFactu = {
     };
     // TODO enviarAEAT(tk): firmar XAdES + envío SOAP al servicio web de la AEAT (requiere backend + certificado).
     return tk.verifactu;
+  }
+};
+
+/* =========================================================
+   CAJÓN PORTAMONEDAS  (conectado a la impresora térmica)
+   ---------------------------------------------------------
+   El cajón se abre con un pulso ESC/POS (ESC p m t1 t2). Desde el
+   navegador se envía por Web Serial API a la impresora/cajón.
+   Requiere Chrome/Edge y servir la app por http(s) o localhost.
+   Si la impresora está instalada con driver de Windows, lo habitual
+   es activar en el driver "abrir cajón al imprimir": entonces el
+   cajón se abre solo con cada ticket (este botón es el complemento).
+   ========================================================= */
+const Cajon = {
+  puerto: null,
+  baud: 9600,
+  KICK: Uint8Array.from([0x1B,0x70,0x00,0x19,0xFA]), // ESC p 0 25 250 (pulso estándar)
+  soportado(){ return "serial" in navigator; },
+  // Recupera un puerto serie ya autorizado en sesiones anteriores (sin preguntar)
+  async init(){
+    if(!this.soportado()) return;
+    try{ const ps = await navigator.serial.getPorts(); if(ps && ps.length) this.puerto = ps[0]; }catch(e){}
+  },
+  // Vía 1: pulso ESC/POS por puerto serie (cajón/impresora conectados como COM)
+  async porSerie(){
+    if(!this.puerto) return false;
+    try{
+      if(!this.puerto.writable) await this.puerto.open({baudRate:this.baud});
+      const w = this.puerto.writable.getWriter();
+      await w.write(this.KICK);
+      w.releaseLock();
+      return true;
+    }catch(e){ console.error("Cajón serie:", e); return false; }
+  },
+  // Vía 2 (USB con driver): imprime un ticket mínimo; el driver, con "abrir cajón al
+  // imprimir" activado, dispara la apertura. Sirve para abrir el cajón sin venta.
+  abrirPorImpresion(){
+    document.body.classList.add("print-cajon");
+    window.print();
+    setTimeout(()=>document.body.classList.remove("print-cajon"), 500);
+  },
+  // Vía 3 (USB sin papel): lanza un protocolo de Windows (p. ej. la herramienta «Open Cash Button»)
+  lanzarComando(uri){
+    try{
+      const a = document.createElement("a");
+      a.href = uri; a.style.display = "none";
+      document.body.appendChild(a); a.click(); a.remove();
+      return true;
+    }catch(e){ console.error("Cajón comando:", e); return false; }
+  },
+  comando(){ return (db.config.cajon && db.config.cajon.comando || "").trim(); },
+  async abrir(interactivo=true){
+    // Acción manual con comando configurado: lanza la herramienta externa (sin papel)
+    if(interactivo && this.comando()){ this.lanzarComando(this.comando()); toast("Abriendo cajón…"); return true; }
+    // Si hay cajón por puerto serie, úsalo (directo, sin imprimir nada)
+    if(await this.porSerie()){ if(interactivo) toast("Cajón abierto 💰"); return true; }
+    // Acción manual sin serie ni comando: abre por impresión (caso USB con driver)
+    if(interactivo){ this.abrirPorImpresion(); return true; }
+    // En automático sin puerto serie no hacemos nada: el ticket auto-impreso ya abre el cajón
+    return false;
   }
 };
 
@@ -1382,19 +1676,64 @@ function datosIniciales(){
     ],
     categorias:cats, productos, clientes:[],
     tickets:[], numTicket:1,
-    mesas:Array.from({length:10},(_,i)=>({id:"m"+(i+1), nombre:"Mesa "+(i+1), lineas:[], cliente:null})),
+    zonas:[{id:"barra",nombre:"Barra"},{id:"terraza",nombre:"Terraza"},{id:"salon",nombre:"Salón"}],
+    mesas:Array.from({length:10},(_,i)=>({id:"m"+(i+1), nombre:"Mesa "+(i+1), zona:"salon", x:12+(i%5)*148, y:12+Math.floor(i/5)*128, lineas:[], cliente:null})),
     cierres:[], aperturaCaja:new Date().toISOString(),
     config:{nombre:"Bar Woodpeckers", dir:"Calle Mayor 1, Madrid", nif:"B-00000000", pie:"¡Gracias por su visita!", numMesas:10,
+      cajon:{autoImprimir:false, imprimirTarjeta:false, papel:"80", copias:1, comando:""},
       verifactu:{activo:false, entorno:"pruebas", nifEmisor:"", razonSocial:"", serie:"", tipoFactura:"F2"}}
   };
 }
 
+/* ---------- Almacenamiento: IndexedDB (nativo, sin librerías) ----------
+   IndexedDB es asíncrono, no bloquea la interfaz y no tiene el límite de
+   ~5 MB de localStorage. Migra automáticamente los datos antiguos de
+   localStorage la primera vez y mantiene ahí una copia de respaldo. */
+const IDB_NAME = "tpv", IDB_STORE = "kv";
+let _idb = null;
+function idbAbrir(){
+  if(_idb) return Promise.resolve(_idb);
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = ()=>{ const d=req.result; if(!d.objectStoreNames.contains(IDB_STORE)) d.createObjectStore(IDB_STORE); };
+    req.onsuccess = ()=>{ _idb = req.result; resolve(_idb); };
+    req.onerror   = ()=>reject(req.error);
+  });
+}
+function idbGet(key){
+  return idbAbrir().then(d=>new Promise((res,rej)=>{
+    const r = d.transaction(IDB_STORE,"readonly").objectStore(IDB_STORE).get(key);
+    r.onsuccess = ()=>res(r.result); r.onerror = ()=>rej(r.error);
+  }));
+}
+function idbSet(key,val){
+  return idbAbrir().then(d=>new Promise((res,rej)=>{
+    const tx = d.transaction(IDB_STORE,"readwrite");
+    tx.objectStore(IDB_STORE).put(val,key);
+    tx.oncomplete = ()=>res(); tx.onerror = ()=>rej(tx.error);
+  }));
+}
+
 let db = null;
-function cargar(){
-  try{ db = JSON.parse(localStorage.getItem(DB_KEY)); }catch(e){ db = null; }
+async function cargar(){
+  // 1) Fuente principal: IndexedDB
+  try{ db = await idbGet(DB_KEY); }catch(e){ db = null; }
+  // 2) Migración automática desde localStorage (solo la primera vez)
+  if(!db || !db.productos){
+    try{
+      const ls = JSON.parse(localStorage.getItem(DB_KEY));
+      if(ls && ls.productos){ db = ls; await idbSet(DB_KEY, db); console.info("TPV: datos migrados de localStorage a IndexedDB"); }
+    }catch(e){}
+  }
+  // 3) Datos iniciales si no hay nada
   if(!db || !db.productos){ db = datosIniciales(); guardar(); }
 }
-function guardar(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function guardar(){
+  // Fuente de verdad: IndexedDB (asíncrono, no bloquea)
+  idbSet(DB_KEY, db).catch(e=>console.error("Error guardando en IndexedDB:", e));
+  // Copia de respaldo en localStorage (se ignora si supera la cuota)
+  try{ localStorage.setItem(DB_KEY, JSON.stringify(db)); }catch(e){}
+}
 
 /* ---------- Estado de la sesión ---------- */
 let usuario = null;          // usuario logueado
@@ -1419,6 +1758,14 @@ function tic(){
 setInterval(tic,1000); tic();
 
 /* ---------- Maximizar / Pantalla completa ---------- */
+$("#btnCajon").onclick = ()=>Cajon.abrir(true);
+function aplicarBtnTema(){ $("#btnTema").textContent = document.documentElement.classList.contains("tema-oscuro") ? "☀️" : "🌙"; }
+$("#btnTema").onclick = ()=>{
+  const oscuro = document.documentElement.classList.toggle("tema-oscuro");
+  try{ localStorage.setItem("tpv_tema", oscuro ? "oscuro" : "claro"); }catch(e){}
+  aplicarBtnTema();
+};
+aplicarBtnTema();
 $("#btnMaximizar").addEventListener("click", ()=>{
   const el = document.documentElement;
   if(!document.fullscreenElement){
@@ -1484,7 +1831,7 @@ $("#btnSalir2").onclick = salir;
 /* =========================================================
    NAVEGACIÓN
    ========================================================= */
-const vistas = {ventas:"vVentas", mesas:"vMesas", historial:"vHistorial", caja:"vCaja",
+const vistas = {ventas:"vVentas", mesas:"vMesas", historial:"vHistorial", caja:"vCaja", informes:"vInformes",
                 clientes:"vClientes", productos:"vProductos", categorias:"vCategorias",
                 usuarios:"vUsuarios", config:"vConfig"};
 function irA(nombre){
@@ -1492,7 +1839,7 @@ function irA(nombre){
   $("#"+vistas[nombre]).classList.add("visible");
   $$("#sidebar .item").forEach(b=>b.classList.toggle("activo", b.dataset.vista===nombre));
   $("#sidebar").classList.remove("abierto");
-  const pintores = {ventas:pintarVentas, mesas:pintarMesas, historial:pintarHistorial, caja:pintarCaja,
+  const pintores = {ventas:pintarVentas, mesas:pintarMesas, historial:pintarHistorial, caja:pintarCaja, informes:pintarInformes,
                     clientes:pintarClientes, productos:pintarProductos, categorias:pintarCategorias,
                     usuarios:pintarUsuarios, config:pintarConfig};
   pintores[nombre]();
@@ -1535,7 +1882,7 @@ function pintarProds(){
 function anadirProducto(p){
   let uds = 1;
   if(buffer && !isNaN(parseFloat(buffer))){ uds = parseFloat(buffer); limpiarBuffer(); }
-  const ex = ticket.find(l=>l.prodId===p.id && l.precio===p.precio);
+  const ex = ticket.find(l=>l.prodId===p.id && l.precio===p.precio && !l.nota);
   if(ex){ ex.uds = r2(ex.uds + uds); lineaSel = ticket.indexOf(ex); }
   else { ticket.push({prodId:p.id, nombre:p.nombre, precio:p.precio, uds, iva:p.iva}); lineaSel = ticket.length-1; }
   pintarTicket();
@@ -1554,7 +1901,7 @@ function pintarTicket(){
   ticket.forEach((l,i)=>{
     const tr = document.createElement("tr");
     if(i===lineaSel) tr.className = "sel";
-    tr.innerHTML = `<td>${l.nombre}</td><td class="num">${eur(l.precio)}</td><td class="num">x${l.uds}</td>
+    tr.innerHTML = `<td>${l.nombre}${l.nota?`<div class="nota">📝 ${l.nota}</div>`:""}</td><td class="num">${eur(l.precio)}</td><td class="num">x${l.uds}</td>
                     <td class="num">${l.iva}%</td><td class="num">${eur(l.precio*l.uds)}</td>`;
     tr.onclick = ()=>{ lineaSel=i; pintarTicket(); };
     tb.appendChild(tr);
@@ -1630,6 +1977,38 @@ function borrarLinea(){
   if(lineaSel>=0 && ticket[lineaSel]){ ticket.splice(lineaSel,1); lineaSel=Math.min(lineaSel,ticket.length-1); pintarTicket(); }
 }
 $("#btnBorrarLinea").onclick = borrarLinea;
+
+/* ---------- Notas / modificadores de línea ---------- */
+let notaLineaIdx = -1;
+const NOTA_SUGERENCIAS = ["Sin hielo","Sin gluten","Poco hecho","Al punto","Muy hecho","Para llevar","Sin cebolla","Extra"];
+(function(){
+  const c = $("#notaSugerencias");
+  NOTA_SUGERENCIAS.forEach(s=>{
+    const b = document.createElement("button"); b.className="btn"; b.textContent=s;
+    b.onclick = ()=>{ const t=$("#notaTexto"); t.value = (t.value.trim()? t.value.trim()+", " : "") + s; t.focus(); };
+    c.appendChild(b);
+  });
+})();
+$("#btnNotaLinea").onclick = ()=>{
+  if(lineaSel<0 || !ticket[lineaSel]){ toast("Seleccione una línea del ticket"); return; }
+  notaLineaIdx = lineaSel;
+  $("#notaLineaNombre").textContent = ticket[lineaSel].nombre;
+  $("#notaTexto").value = ticket[lineaSel].nota || "";
+  abrirModal("modalNota");
+  setTimeout(()=>$("#notaTexto").focus(), 50);
+};
+$("#notaGuardar").onclick = ()=>{
+  if(notaLineaIdx>=0 && ticket[notaLineaIdx]){
+    const v = $("#notaTexto").value.trim();
+    if(v) ticket[notaLineaIdx].nota = v; else delete ticket[notaLineaIdx].nota;
+    pintarTicket();
+  }
+  cerrarModal();
+};
+$("#notaQuitar").onclick = ()=>{
+  if(notaLineaIdx>=0 && ticket[notaLineaIdx]) delete ticket[notaLineaIdx].nota;
+  pintarTicket(); cerrarModal();
+};
 $("#btnCancelarTicket").onclick = ()=>{
   if(!ticket.length) return;
   if(confirm("¿Cancelar el ticket actual?")){
@@ -1676,57 +2055,320 @@ $("#btnSinCliente").onclick = ()=>{ clienteActual=null; cerrarModal(); pintarVen
 /* =========================================================
    PAGO
    ========================================================= */
-function abrirPago(){
-  if(!ticket.length){ toast("El ticket está vacío"); return; }
-  const t = totalesTicket(ticket);
-  abrirModal("modalPago");
-  $("#pagoTotal").textContent = eur(t.total);
-  $("#pagoInput").value = t.total.toFixed(2);
-  pagoMetodo = "Efectivo";
-  $$("#pagoMetodos button").forEach(b=>b.classList.toggle("sel", b.dataset.metodo===pagoMetodo));
-  // botones rápidos: exacto, redondeos y billetes
-  const sugerencias = [...new Set([t.total, Math.ceil(t.total), Math.ceil(t.total/5)*5, Math.ceil(t.total/10)*10, Math.ceil(t.total/20)*20, 50].filter(v=>v>=t.total))].slice(0,6);
-  $("#pagoRapido").innerHTML = "";
-  sugerencias.forEach(v=>{
-    const b = document.createElement("button");
-    b.textContent = eur(v);
-    b.onclick = ()=>{ $("#pagoInput").value = v.toFixed(2); calcCambio(); };
-    $("#pagoRapido").appendChild(b);
-  });
-  calcCambio();
-}
-function calcCambio(){
-  const t = totalesTicket(ticket);
-  const ent = parseFloat($("#pagoInput").value) || 0;
-  $("#pagoCambioVal").textContent = eur(Math.max(0, ent - t.total));
-}
-$("#pagoInput").oninput = calcCambio;
-$$("#pagoMetodos button").forEach(b=> b.onclick = ()=>{
-  pagoMetodo = b.dataset.metodo;
-  $$("#pagoMetodos button").forEach(x=>x.classList.toggle("sel", x===b));
-});
-$("#btnConfirmarPago").onclick = async ()=>{
-  const t = totalesTicket(ticket);
-  const ent = parseFloat($("#pagoInput").value) || 0;
-  if(pagoMetodo==="Efectivo" && ent < t.total){ toast("Cantidad entregada insuficiente"); return; }
+/* Crea, registra (VeriFactu) y persiste un ticket. Reutilizado por el cobro normal y por las partes de una división. */
+async function crearTicket({lineas, base, iva, total, pago, entregado, detalle}){
   const tk = {
     id:uid(), num:db.numTicket++, fecha:new Date().toISOString(),
     usuario:usuario.nombre, cliente:clienteActual,
-    lineas:ticket.map(l=>({...l})), pago:pagoMetodo,
-    entregado: pagoMetodo==="Efectivo" ? ent : t.total,
-    total:t.total, iva:t.iva, base:t.base
+    lineas:lineas.map(l=>({...l})), pago, entregado, total, iva, base,
+    pagoDetalle: detalle || null   // desglose efectivo/tarjeta en pago mixto
   };
-  // VeriFactu: genera el registro de facturación (huella encadenada + QR) si está activo
   try{ await VeriFactu.registrar(tk); }catch(e){ console.error("VeriFactu:", e); }
-  db.tickets.push(tk);
-  if(mesaActual){ const m = db.mesas.find(x=>x.id===mesaActual); m.lineas=[]; m.cliente=null; }
-  guardar();
-  ticket=[]; lineaSel=-1; mesaActual=null; clienteActual=null;
-  cerrarModal();
-  mostrarRecibo(tk);
-  pintarVentas();
-  mostrarPanelVentas("productos");
+  db.tickets.push(tk); guardar();
+  return tk;
+}
+function pintarPagoRapido(total){
+  const sug = [...new Set([total, Math.ceil(total), Math.ceil(total/5)*5, Math.ceil(total/10)*10, Math.ceil(total/20)*20, 50].filter(v=>v>=total))].slice(0,6);
+  const cont = $("#pagoRapido"); cont.innerHTML = "";
+  sug.forEach(v=>{
+    const b = document.createElement("button");
+    b.textContent = eur(v);
+    b.onclick = ()=>{ $("#pagoInput").value = v.toFixed(2); calcCambio(); };
+    cont.appendChild(b);
+  });
+}
+// pagoContexto = null  -> cobro normal del ticket completo
+//              = {total,base,iva,lineas,etiqueta,onPagado} -> cobro de una parte (división)
+let pagoContexto = null;
+function totalAPagar(){ return pagoContexto ? pagoContexto.total : totalesTicket(ticket).total; }
+function prepararModalPago(total, etiqueta){
+  abrirModal("modalPago");
+  $("#pagoTotal").textContent = eur(total);
+  $("#pagoEtiqueta").textContent = etiqueta || "";
+  $("#pagoInput").value = total.toFixed(2);
+  $("#mixEfectivo").value = ""; $("#mixTarjeta").value = "";
+  pagoMetodo = "Efectivo";
+  $$("#pagoMetodos button").forEach(b=>b.classList.toggle("sel", b.dataset.metodo===pagoMetodo));
+  pintarPagoRapido(total);
+  actualizarVistaPago();
+}
+function abrirPago(){
+  if(!ticket.length){ toast("El ticket está vacío"); return; }
+  pagoContexto = null;
+  prepararModalPago(totalesTicket(ticket).total, "");
+}
+function abrirPagoParte(ctx, etiqueta){
+  pagoContexto = ctx;
+  prepararModalPago(ctx.total, etiqueta);
+}
+// Muestra los controles según el método elegido (Efectivo / Tarjeta / Mixto)
+function actualizarVistaPago(){
+  const mix = pagoMetodo==="Mixto", efe = pagoMetodo==="Efectivo";
+  $("#pagoEntregado").style.display = efe ? "" : "none";
+  $("#pagoRapido").style.display    = efe ? "" : "none";
+  $("#pagoMixto").style.display     = mix ? "" : "none";
+  if(mix && !$("#mixEfectivo").value && !$("#mixTarjeta").value){
+    $("#mixEfectivo").value = "0.00";
+    $("#mixTarjeta").value  = totalAPagar().toFixed(2);
+  }
+  calcCambio();
+}
+function calcCambio(){
+  const objetivo = totalAPagar();
+  let entregado;
+  if(pagoMetodo==="Mixto"){
+    const efe = parseFloat($("#mixEfectivo").value)||0, tar = parseFloat($("#mixTarjeta").value)||0;
+    entregado = efe + tar;
+    const resto = r2(objetivo - tar);
+    $("#mixResto").innerHTML = (tar>objetivo+0.001)
+      ? `<span style="color:var(--rojo)">La tarjeta supera el total</span>`
+      : `Falta en efectivo: <b>${eur(Math.max(0,resto))}</b>`;
+  } else if(pagoMetodo==="Efectivo"){
+    entregado = parseFloat($("#pagoInput").value)||0;
+  } else {
+    entregado = objetivo;
+  }
+  $("#pagoCambioVal").textContent = eur(Math.max(0, entregado - objetivo));
+}
+$("#pagoInput").oninput = calcCambio;
+$("#mixEfectivo").oninput = calcCambio;
+$("#mixTarjeta").oninput = calcCambio;
+$$("#pagoMetodos button").forEach(b=> b.onclick = ()=>{
+  pagoMetodo = b.dataset.metodo;
+  $$("#pagoMetodos button").forEach(x=>x.classList.toggle("sel", x===b));
+  actualizarVistaPago();
+});
+// Valida el pago y devuelve {pago, entregado, detalle} o null si no es válido
+function resolverPago(objetivo){
+  if(pagoMetodo==="Mixto"){
+    const efe = r2(parseFloat($("#mixEfectivo").value)||0), tar = r2(parseFloat($("#mixTarjeta").value)||0);
+    if(tar > objetivo + 0.001){ toast("La tarjeta no puede superar el total"); return null; }
+    if(r2(efe+tar) < objetivo){ toast("Importe insuficiente (efectivo + tarjeta)"); return null; }
+    return { pago:"Mixto", entregado:r2(efe+tar), detalle:{efectivo:efe, tarjeta:tar} };
+  }
+  if(pagoMetodo==="Efectivo"){
+    const ent = parseFloat($("#pagoInput").value)||0;
+    if(ent < objetivo){ toast("Cantidad entregada insuficiente"); return null; }
+    return { pago:"Efectivo", entregado:ent, detalle:null };
+  }
+  return { pago:"Tarjeta", entregado:objetivo, detalle:null };
+}
+let procesandoPago = false;   // evita doble cobro por doble clic (el handler es async)
+$("#btnConfirmarPago").onclick = async ()=>{
+  if(procesandoPago) return;
+  const objetivo = totalAPagar();
+  const pg = resolverPago(objetivo);
+  if(!pg) return;
+  procesandoPago = true;
+  $("#btnConfirmarPago").disabled = true;
+  try{
+    // Cajón: si el pago lleva efectivo, ábrelo (solo si ya está conectado; no pregunta)
+    if(pg.pago!=="Tarjeta") Cajon.abrir(false);
+    if(pagoContexto){
+      // ----- Cobro de una PARTE (división) -----
+      const ctx = pagoContexto;
+      const tk = await crearTicket({lineas:ctx.lineas, base:ctx.base, iva:ctx.iva, total:ctx.total,
+        pago:pg.pago, entregado:pg.entregado, detalle:pg.detalle});
+      if(split){ split.tickets.push(tk.id); split.cobrado = r2((split.cobrado||0) + ctx.total); }
+      pagoContexto = null;
+      if(ctx.onPagado) ctx.onPagado(tk);
+      mostrarReciboSplit(tk);
+      if(debeAutoImprimir(pg.pago)) imprimirRecibo();
+    } else {
+      // ----- Cobro NORMAL del ticket completo -----
+      const t = totalesTicket(ticket);
+      const tk = await crearTicket({lineas:ticket, base:t.base, iva:t.iva, total:t.total,
+        pago:pg.pago, entregado:pg.entregado, detalle:pg.detalle});
+      if(mesaActual){ const m = db.mesas.find(x=>x.id===mesaActual); if(m){ m.lineas=[]; m.cliente=null; } }
+      guardar();
+      ticket=[]; lineaSel=-1; mesaActual=null; clienteActual=null;
+      cerrarModal();
+      mostrarRecibo(tk);
+      if(debeAutoImprimir(pg.pago)) imprimirRecibo();
+      pintarVentas();
+      mostrarPanelVentas("productos");
+    }
+  } finally {
+    procesandoPago = false;
+    $("#btnConfirmarPago").disabled = false;
+  }
 };
+
+/* =========================================================
+   DIVIDIR CUENTA  (a partes iguales / por productos)
+   ========================================================= */
+let split = null;        // estado de la división en curso
+let divOrigen = null;    // copia de la venta original (para restaurar si se cancela)
+let divTab = "iguales";
+let divSel = [];         // unidades seleccionadas por línea (modo productos)
+
+function abrirDividir(){
+  if(!split){
+    if(!ticket.length){ toast("El ticket está vacío"); return; }
+    const etiqueta = mesaActual ? (db.mesas.find(m=>m.id===mesaActual)?.nombre || "Mesa") : "Venta directa";
+    divOrigen = { lineas: ticket.map(l=>({...l})), mesa: mesaActual, cliente: clienteActual, etiqueta };
+    divTab = "iguales";
+  } else {
+    divTab = split.modo;   // división en curso: no se puede cambiar de modo
+  }
+  divSel = [];
+  abrirModal("modalDividir");
+  renderDividir();
+}
+function renderDividir(){
+  const enCurso = !!split;
+  $("#divTabIguales").disabled  = enCurso && split.modo!=="iguales";
+  $("#divTabProductos").disabled = enCurso && split.modo!=="productos";
+  $("#divTabIguales").classList.toggle("sel", divTab==="iguales");
+  $("#divTabProductos").classList.toggle("sel", divTab==="productos");
+  $("#divIguales").style.display   = divTab==="iguales" ? "" : "none";
+  $("#divProductos").style.display = divTab==="productos" ? "" : "none";
+
+  const totOrig = totalesTicket(divOrigen.lineas);
+  const pend = totalesTicket(ticket);
+  let info = `Cuenta: <b>${eur(totOrig.total)}</b>`;
+  if(split && split.cobrado) info += ` · Cobrado: <b>${eur(split.cobrado)}</b> · Pendiente: <b>${eur(pend.total)}</b>`;
+  $("#divInfo").innerHTML = info;
+
+  if(divTab==="iguales"){
+    const n = Math.max(2, parseInt($("#divPersonas").value)||2);
+    $("#divPorPersona").innerHTML = `${n} pagos de <b>${eur(r2(totOrig.total/n))}</b> (la última parte ajusta el redondeo)`;
+    $("#divAccion").textContent = "➗ Cobrar por partes";
+    $("#divAccion").disabled = totOrig.total<=0;
+  } else {
+    renderDivLineas();
+    $("#divAccion").textContent = "💶 Cobrar selección";
+  }
+}
+function renderDivLineas(){
+  const cont = $("#divLineas"); cont.innerHTML = "";
+  ticket.forEach((l,i)=>{
+    if(divSel[i]==null) divSel[i]=0;
+    if(divSel[i]>l.uds) divSel[i]=l.uds;
+    const row = document.createElement("div"); row.className="div-linea";
+    row.innerHTML = `<span class="nom">${l.nombre}</span>
+      <span class="ud"><button data-i="${i}" data-d="-1">➖</button><b>${divSel[i]}</b><span style="color:#999">/${l.uds}</span><button data-i="${i}" data-d="1">➕</button></span>
+      <span class="imp">${eur(l.precio*divSel[i])}</span>`;
+    cont.appendChild(row);
+  });
+  const sel = ticket.map((l,i)=>({...l, uds:divSel[i]||0})).filter(l=>l.uds>0);
+  const tot = totalesTicket(sel);
+  $("#divSelTotal").innerHTML = `Esta parte: <b style="color:var(--verde-osc);font-size:22px">${eur(tot.total)}</b>`;
+  $("#divAccion").disabled = tot.total<=0;
+}
+$("#divLineas").onclick = e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  const i = +b.dataset.i, d = +b.dataset.d;
+  divSel[i] = Math.max(0, Math.min(ticket[i].uds, (divSel[i]||0)+d));
+  renderDivLineas();
+};
+$("#divMas").onclick   = ()=>{ $("#divPersonas").value = (parseInt($("#divPersonas").value)||2)+1; renderDividir(); };
+$("#divMenos").onclick = ()=>{ $("#divPersonas").value = Math.max(2,(parseInt($("#divPersonas").value)||2)-1); renderDividir(); };
+$("#divPersonas").oninput = renderDividir;
+$("#divTabIguales").onclick  = ()=>{ if(!$("#divTabIguales").disabled){ divTab="iguales"; renderDividir(); } };
+$("#divTabProductos").onclick = ()=>{ if(!$("#divTabProductos").disabled){ divTab="productos"; renderDividir(); } };
+$("#divAccion").onclick = ()=>{ divTab==="iguales" ? iniciarSplitIguales() : cobrarSeleccionProductos(); };
+$("#btnDividir").onclick = abrirDividir;
+
+// Reparte total/base/IVA en n partes iguales (la última absorbe el redondeo)
+function partesIguales(n, tot){
+  const partes = []; let accT=0, accB=0;
+  for(let i=0;i<n;i++){
+    let pt, pb;
+    if(i<n-1){ pt=r2(tot.total/n); pb=r2(tot.base/n); }
+    else { pt=r2(tot.total-accT); pb=r2(tot.base-accB); }
+    accT=r2(accT+pt); accB=r2(accB+pb);
+    partes.push({total:pt, base:pb, iva:r2(pt-pb)});
+  }
+  return partes;
+}
+function iniciarSplitIguales(){
+  const n = Math.max(2, parseInt($("#divPersonas").value)||2);
+  const tot = totalesTicket(divOrigen.lineas);
+  if(tot.total<=0){ toast("Nada que cobrar"); return; }
+  const partes = partesIguales(n, tot).map((p,i)=>{
+    const pct = p.base>0 ? Math.round(p.iva/p.base*100) : 0;
+    return {...p, lineas:[{nombre:`Parte ${i+1}/${n} · ${divOrigen.etiqueta}`, precio:p.total, uds:1, iva:pct}]};
+  });
+  split = { modo:"iguales", partes, idx:0, tickets:[], cobrado:0, etiqueta:divOrigen.etiqueta };
+  // Libera la venta original: se cobrará por partes (restaurable si se cancela)
+  if(mesaActual){ const m = db.mesas.find(x=>x.id===mesaActual); if(m){ m.lineas=[]; m.cliente=null; } }
+  ticket=[]; lineaSel=-1; guardar();
+  abrirPagoParte({...partes[0]}, `Parte 1/${n} · ${divOrigen.etiqueta}`);
+}
+function cobrarSeleccionProductos(){
+  const lineas = ticket.map((l,i)=>({...l, uds:divSel[i]||0})).filter(l=>l.uds>0);
+  if(!lineas.length){ toast("Seleccione al menos un producto"); return; }
+  const tot = totalesTicket(lineas);
+  if(!split) split = { modo:"productos", tickets:[], cobrado:0, etiqueta:divOrigen.etiqueta };
+  const seleccion = divSel.slice();
+  abrirPagoParte({
+    total:tot.total, base:tot.base, iva:tot.iva, lineas, etiqueta:divOrigen.etiqueta,
+    onPagado: ()=>{
+      // descuenta del ticket las unidades ya cobradas
+      ticket = ticket.map((l,i)=>({...l, uds:r2(l.uds-(seleccion[i]||0))})).filter(l=>l.uds>0);
+      lineaSel = Math.min(lineaSel, ticket.length-1);
+      pintarTicket();
+    }
+  }, `${divOrigen.etiqueta} · parte`);
+}
+// Tras cobrar una parte, decide si quedan más cobros o si la división ha terminado
+function continuarSplit(){
+  if(!split){ cerrarModal(); return; }
+  if(split.modo==="iguales"){
+    split.idx++;
+    if(split.idx < split.partes.length){
+      abrirPagoParte({...split.partes[split.idx]}, `Parte ${split.idx+1}/${split.partes.length} · ${split.etiqueta}`);
+    } else finalizarSplit();
+  } else {
+    if(ticket.length) abrirDividir();   // quedan productos: seleccionar la siguiente parte
+    else finalizarSplit();
+  }
+}
+function finalizarSplit(){
+  split = null; pagoContexto = null; divOrigen = null;
+  if(mesaActual){ const m = db.mesas.find(x=>x.id===mesaActual); if(m){ m.lineas=[]; m.cliente=null; } }
+  ticket=[]; lineaSel=-1; mesaActual=null; clienteActual=null;
+  guardar(); cerrarModal(); pintarVentas(); mostrarPanelVentas("productos");
+  toast("Cuenta dividida cobrada ✓");
+}
+function restaurarOrigen(){
+  if(!divOrigen) return;
+  ticket = divOrigen.lineas.map(l=>({...l}));
+  mesaActual = divOrigen.mesa; clienteActual = divOrigen.cliente;
+  lineaSel = ticket.length-1;
+  if(mesaActual){ const m = db.mesas.find(x=>x.id===mesaActual); if(m){ m.lineas=ticket.map(l=>({...l})); m.cliente=clienteActual; } }
+}
+// Salir de la división. Si hay partes ya cobradas, las deshace (salvo con VeriFactu activo).
+function cancelarSplit(){
+  if(split && split.tickets.length){
+    if(VeriFactu.activo()){
+      if(!confirm("Hay partes ya cobradas que no se pueden anular (VeriFactu). ¿Terminar la división y dejar el resto sin cobrar?")) return;
+      finalizarSplit(); return;
+    }
+    if(!confirm("Hay partes ya cobradas. ¿Cancelar la división y ANULAR esos pagos?")) return;
+    const ids = new Set(split.tickets);
+    db.tickets = db.tickets.filter(t=>!ids.has(t.id));
+  }
+  restaurarOrigen();
+  split = null; pagoContexto = null; divOrigen = null;
+  guardar(); cerrarModal(); pintarVentas(); mostrarPanelVentas("cobro");
+  toast("División cancelada");
+}
+// Cierre del modal de pago/división teniendo en cuenta si hay una división en curso
+function cancelarPagoModal(){
+  if(split){ cancelarSplit(); return; }
+  if(divOrigen){ divOrigen=null; }
+  cerrarModal();
+}
+$("#pagoCancelar").onclick = cancelarPagoModal;
+$("#pagoCerrarX").onclick  = cancelarPagoModal;
+$("#divCancelar").onclick  = cancelarPagoModal;
+$("#divCerrarX").onclick   = cancelarPagoModal;
+$("#btnCancelarSplit").onclick = cancelarSplit;
+$("#btnContinuarSplit").onclick = ()=>{ $("#btnContinuarSplit").style.display="none"; continuarSplit(); };
+$("#btnCerrarRecibo").onclick = cerrarModal;
+$("#reciboCerrarX").onclick = ()=>{ if(split){ cancelarPagoModal(); } else cerrarModal(); };
 
 /* =========================================================
    RECIBO
@@ -1748,6 +2390,7 @@ function textoRecibo(tk){
   s += sep + "\n";
   tk.lineas.forEach(l=>{
     s += l.nombre + "\n";
+    if(l.nota) s += "  (" + l.nota + ")\n";
     s += lineaRecibo("  " + l.uds + " x " + l.precio.toFixed(2), (l.precio*l.uds).toFixed(2)+" €") + "\n";
   });
   s += sep + "\n";
@@ -1756,7 +2399,11 @@ function textoRecibo(tk){
   s += lineaRecibo("TOTAL", tk.total.toFixed(2)+" €") + "\n";
   s += sep + "\n";
   s += lineaRecibo("Pago: "+tk.pago, tk.entregado.toFixed(2)+" €") + "\n";
-  if(tk.pago==="Efectivo") s += lineaRecibo("Cambio", (tk.entregado-tk.total).toFixed(2)+" €") + "\n";
+  if(tk.pago==="Mixto" && tk.pagoDetalle){
+    s += lineaRecibo("  Efectivo", tk.pagoDetalle.efectivo.toFixed(2)+" €") + "\n";
+    s += lineaRecibo("  Tarjeta",  tk.pagoDetalle.tarjeta.toFixed(2)+" €") + "\n";
+  }
+  if(tk.pago==="Efectivo" || tk.pago==="Mixto") s += lineaRecibo("Cambio", (tk.entregado-tk.total).toFixed(2)+" €") + "\n";
   s += sep + "\n" + cen(c.pie) + "\n";
   // VeriFactu: huella y enlace de cotejo (cuando el registro existe)
   if(tk.verifactu){
@@ -1771,14 +2418,55 @@ function mostrarRecibo(tk, permitirAnular){
   reciboTicketId = tk.id;
   abrirModal("modalRecibo");
   $("#recibo").textContent = textoRecibo(tk);
-  $("#btnAnularTicket").style.display = (permitirAnular && usuario.rol==="admin") ? "" : "none";
+  $("#btnAnularTicket").style.display = (permitirAnular && usuario.rol==="admin" && !VeriFactu.activo()) ? "" : "none";
+  $("#btnContinuarSplit").style.display = "none";
+  $("#btnCancelarSplit").style.display = "none";
+  $("#btnCerrarRecibo").style.display = "";
+  $("#reciboCerrarX").style.display = "";
 }
-$("#btnImprimir").onclick = ()=>{
+// Recibo de una parte cobrada dentro de una división: en vez de "Cerrar", ofrece continuar/finalizar
+function mostrarReciboSplit(tk){
+  reciboTicketId = tk.id;
+  abrirModal("modalRecibo");
+  $("#recibo").textContent = textoRecibo(tk);
+  $("#btnAnularTicket").style.display = "none";
+  $("#btnCerrarRecibo").style.display = "none";
+  $("#reciboCerrarX").style.display = "none";   // se sale con Continuar/Finalizar o Cancelar
+  const ultima = split.modo==="iguales" ? (split.idx >= split.partes.length-1) : (ticket.length===0);
+  $("#btnContinuarSplit").style.display = "";
+  $("#btnContinuarSplit").textContent = ultima ? "✔ Finalizar" : "➡ Cobrar siguiente parte";
+  $("#btnCancelarSplit").style.display = (!VeriFactu.activo() && !ultima) ? "" : "none";
+}
+// Ajusta el ancho de papel (80/58 mm) generando reglas @page e #recibo a medida
+function aplicarConfigImpresion(){
+  const c = db.config.cajon || {};
+  const p58 = c.papel === "58";
+  const w  = p58 ? "58mm" : "80mm";
+  const rw = p58 ? "50mm" : "72mm";
+  const fs = p58 ? "7pt"  : "11pt";
+  $("#estiloImpresion").textContent =
+    `@page{size:${w} auto;margin:0;}`+
+    `@media print{html,body{width:${w};}`+
+    `#overlay.imprimiendo #recibo{width:${rw};max-width:${rw};font-size:${fs};}}`;
+}
+function imprimirRecibo(){
+  const copias = Math.max(1, Math.min(3, (db.config.cajon && db.config.cajon.copias) || 1));
   $("#overlay").classList.add("imprimiendo");
-  window.print();
+  for(let i=0;i<copias;i++) window.print();
   setTimeout(()=>$("#overlay").classList.remove("imprimiendo"), 500);
-};
+}
+$("#btnImprimir").onclick = imprimirRecibo;
+function autoImprimirActivo(){ return !!(db.config.cajon && db.config.cajon.autoImprimir); }
+function imprimirTarjetaActivo(){ return !!(db.config.cajon && db.config.cajon.imprimirTarjeta); }
+// ¿Debe imprimirse automáticamente este pago?
+function debeAutoImprimir(pago){ return pago==="Tarjeta" ? imprimirTarjetaActivo() : autoImprimirActivo(); }
 $("#btnAnularTicket").onclick = ()=>{
+  // Con VeriFactu activo no se puede borrar un ticket (rompería la cadena de huellas):
+  // la norma exige emitir un registro de anulación/rectificativa, pendiente en el módulo.
+  if(VeriFactu.activo()){
+    alert("VeriFactu está activo: no se puede borrar un ticket porque rompería la cadena de facturación.\n\nLa anulación deberá hacerse mediante un registro de anulación (función pendiente del módulo VeriFactu).");
+    return;
+  }
   if(!confirm("¿Anular este ticket? Esta acción no se puede deshacer.")) return;
   db.tickets = db.tickets.filter(t=>t.id!==reciboTicketId);
   guardar(); cerrarModal(); pintarHistorial(); toast("Ticket anulado");
@@ -1787,24 +2475,218 @@ $("#btnAnularTicket").onclick = ()=>{
 /* =========================================================
    MESAS
    ========================================================= */
-function pintarMesas(){
-  // ajustar número de mesas según configuración
-  const n = db.config.numMesas;
-  while(db.mesas.length < n) db.mesas.push({id:"m"+(db.mesas.length+1), nombre:"Mesa "+(db.mesas.length+1), lineas:[], cliente:null});
-  if(db.mesas.length > n && db.mesas.slice(n).every(m=>!m.lineas.length)) db.mesas = db.mesas.slice(0,n);
+let zonaActual = null;       // zona mostrada en el plano
+let editandoPlano = false;   // modo edición (arrastrar/añadir/eliminar)
+let mesaAccId = null;        // mesa sobre la que actúa el modal de acciones
 
-  $("#planoTitulo").textContent = db.config.nombre;
-  const cont = $("#plano"); cont.innerHTML = "";
+// Garantiza que existan zonas y que cada mesa tenga zona y posición (x,y)
+function migrarMesas(){
+  if(!Array.isArray(db.zonas) || !db.zonas.length){
+    db.zonas = [{id:"barra",nombre:"Barra"},{id:"terraza",nombre:"Terraza"},{id:"salon",nombre:"Salón"}];
+  }
+  const z0 = db.zonas[0].id;
+  let i = 0;
   db.mesas.forEach(m=>{
-    const d = document.createElement("div");
-    const t = totalesTicket(m.lineas);
-    d.className = "mesa" + (m.lineas.length ? " ocupada" : "");
-    d.innerHTML = `<span class="icono">${m.lineas.length ? "🍽️" : "🪑"}</span>${m.nombre}` +
-                  (m.lineas.length ? `<span class="info">${m.lineas.length} líneas · ${eur(t.total)}</span>` : `<span class="info">Libre</span>`);
-    d.onclick = ()=>abrirMesa(m);
-    cont.appendChild(d);
+    if(!m.zona || !db.zonas.find(z=>z.id===m.zona)) m.zona = z0;
+    if(typeof m.x!=="number" || typeof m.y!=="number"){
+      m.x = 12 + (i%5)*148; m.y = 12 + Math.floor(i/5)*128;
+    }
+    i++;
   });
 }
+function pintarMesas(){
+  migrarMesas();
+  if(!zonaActual || !db.zonas.find(z=>z.id===zonaActual)) zonaActual = db.zonas[0].id;
+  // Pestañas de zona
+  const tabs = $("#zonaTabs"); tabs.innerHTML = "";
+  db.zonas.forEach(z=>{
+    const ocup = db.mesas.filter(m=>m.zona===z.id && m.lineas.length).length;
+    const b = document.createElement("button");
+    b.className = "zona-tab" + (z.id===zonaActual ? " activo" : "");
+    b.innerHTML = z.nombre + (ocup ? ` <span class="badge">${ocup}</span>` : "");
+    b.onclick = ()=>{ zonaActual = z.id; pintarMesas(); };
+    tabs.appendChild(b);
+  });
+  $("#btnEditarPlano").classList.toggle("activo", editandoPlano);
+  $("#planoEditBar").style.display = editandoPlano ? "" : "none";
+  // Plano
+  const cont = $("#plano"); cont.classList.toggle("editando", editandoPlano); cont.innerHTML = "";
+  let maxY = 0;
+  db.mesas.filter(m=>m.zona===zonaActual).forEach(m=>{
+    const t = totalesTicket(m.lineas);
+    const d = document.createElement("div");
+    d.className = "mesa f-" + (m.forma||"rect") + (m.lineas.length ? " ocupada" : "");
+    d.style.left = (m.x||12)+"px"; d.style.top = (m.y||12)+"px";
+    d.style.width = (m.w||124)+"px"; d.style.height = (m.h||96)+"px";
+    d.innerHTML = `<button class="mas" type="button">⋮</button>
+      <span class="icono">${m.lineas.length ? "🍽️" : "🪑"}</span><span class="mnom">${m.nombre}</span>
+      <span class="info">${m.lineas.length ? (m.lineas.length+" líneas · "+eur(t.total)) : "Libre"}</span>`;
+    cont.appendChild(d);
+    maxY = Math.max(maxY, (m.y||12)+(m.h||96)+30);
+    d.querySelector(".mas").onclick = e=>{ e.stopPropagation(); abrirAccionesMesa(m); };
+    if(editandoPlano){
+      hacerArrastrable(d, m);
+      const rz = document.createElement("span"); rz.className = "resize"; d.appendChild(rz);
+      hacerRedimensionable(rz, d, m);
+    } else d.onclick = ()=>abrirMesa(m);
+  });
+  cont.style.minHeight = (maxY+40)+"px";
+}
+// Arrastrar una mesa por el plano (ratón y táctil) con ajuste a rejilla
+function hacerArrastrable(d, m){
+  let sx, sy, ox, oy, drag=false;
+  d.onpointerdown = e=>{
+    if(e.target.closest(".mas")) return;
+    drag=true; d.setPointerCapture(e.pointerId);
+    sx=e.clientX; sy=e.clientY; ox=m.x||12; oy=m.y||12;
+    d.classList.add("arrastrando");
+  };
+  d.onpointermove = e=>{
+    if(!drag) return;
+    d.style.left = Math.max(0, ox + (e.clientX-sx)) + "px";
+    d.style.top  = Math.max(0, oy + (e.clientY-sy)) + "px";
+  };
+  d.onpointerup = e=>{
+    if(!drag) return; drag=false; d.classList.remove("arrastrando");
+    m.x = Math.round(parseInt(d.style.left)/10)*10;
+    m.y = Math.round(parseInt(d.style.top)/10)*10;
+    d.style.left = m.x+"px"; d.style.top = m.y+"px";
+    guardar();
+  };
+}
+// Redimensionar una mesa arrastrando el tirador (esquina inferior derecha)
+function hacerRedimensionable(handle, d, m){
+  let sx, sy, ow, oh, rz=false;
+  handle.onpointerdown = e=>{
+    e.stopPropagation(); rz=true; handle.setPointerCapture(e.pointerId);
+    sx=e.clientX; sy=e.clientY; ow=m.w||124; oh=m.h||96;
+  };
+  handle.onpointermove = e=>{
+    if(!rz) return;
+    let nw = Math.max(70, ow+(e.clientX-sx)), nh = Math.max(56, oh+(e.clientY-sy));
+    if((m.forma||"rect")!=="rect"){ const s=Math.max(nw,nh); nw=nh=s; }   // cuadrada/redonda: lados iguales
+    d.style.width = nw+"px"; d.style.height = nh+"px";
+  };
+  handle.onpointerup = e=>{
+    if(!rz) return; rz=false;
+    m.w = Math.round(parseInt(d.style.width)/10)*10;
+    m.h = Math.round(parseInt(d.style.height)/10)*10;
+    d.style.width = m.w+"px"; d.style.height = m.h+"px";
+    guardar();
+  };
+}
+$("#btnEditarPlano").onclick = ()=>{ editandoPlano = !editandoPlano; pintarMesas(); };
+$("#btnAddMesa").onclick = ()=>{
+  const nombre = prompt("Nombre de la nueva mesa:", "Mesa "+(db.mesas.length+1));
+  if(nombre===null) return;
+  const enZ = db.mesas.filter(m=>m.zona===zonaActual).length;
+  db.mesas.push({ id:"m"+Date.now().toString(36), nombre:nombre.trim()||("Mesa "+(db.mesas.length+1)),
+    zona:zonaActual, x:12+(enZ%5)*148, y:12+Math.floor(enZ/5)*128, lineas:[], cliente:null });
+  guardar(); pintarMesas();
+};
+
+/* ---------- Acciones de una mesa ---------- */
+function abrirAccionesMesa(m){
+  mesaAccId = m.id;
+  $("#mesaAccTitulo").textContent = m.nombre + (m.lineas.length ? " · "+eur(totalesTicket(m.lineas).total) : " · Libre");
+  $("#mesaAccLista").style.display = "none"; $("#mesaAccLista").innerHTML = "";
+  const cont = $("#mesaAccBotones"); cont.style.display = ""; cont.innerHTML = "";
+  const add = (txt, cls, fn)=>{ const b=document.createElement("button"); b.className="btn "+(cls||""); b.textContent=txt; b.onclick=fn; cont.appendChild(b); };
+  add("🧾 Abrir mesa", "verde", ()=>{ cerrarModal(); abrirMesa(m); });
+  if(m.lineas.length){
+    add("➡️ Mover ticket a…", "azul", ()=> pickMesa("Mover a qué mesa libre:", x=>!x.lineas.length && x.id!==m.id, dest=>moverTicket(m,dest)));
+    add("🔗 Unir con…", "azul", ()=> pickMesa("Unir con qué mesa:", x=>x.id!==m.id, dest=>unirMesas(m,dest)));
+  }
+  add("✏️ Renombrar", "", ()=>{ const n=prompt("Nombre de la mesa:", m.nombre); if(n!==null && n.trim()){ m.nombre=n.trim(); guardar(); pintarMesas(); abrirAccionesMesa(m); } });
+  add("🔷 Forma", "", ()=> pickLista("Forma de la mesa:", [
+    {label:"▭ Rectangular", onPick:()=>setFormaMesa(m,"rect")},
+    {label:"◼ Cuadrada", onPick:()=>setFormaMesa(m,"cuadrada")},
+    {label:"⬤ Redonda", onPick:()=>setFormaMesa(m,"redonda")}
+  ]));
+  add("📐 Tamaño", "", ()=> pickLista("Tamaño de la mesa:", [
+    {label:"Pequeña", onPick:()=>setTamMesa(m,90,76)},
+    {label:"Mediana", onPick:()=>setTamMesa(m,124,96)},
+    {label:"Grande", onPick:()=>setTamMesa(m,170,130)}
+  ]));
+  add("🗂️ Cambiar de zona", "", ()=> pickZona(z=>{ m.zona=z.id; guardar(); pintarMesas(); cerrarModal(); toast("Mesa movida a "+z.nombre); }));
+  add("🗑️ Eliminar mesa", "rojo", ()=>{
+    if(m.lineas.length){ toast("No se puede eliminar una mesa ocupada"); return; }
+    if(!confirm("¿Eliminar "+m.nombre+"?")) return;
+    db.mesas = db.mesas.filter(x=>x.id!==m.id); guardar(); pintarMesas(); cerrarModal();
+  });
+  abrirModal("modalMesaAcc");
+}
+// Lista de selección dentro del modal de acciones
+function pickLista(titulo, items){
+  $("#mesaAccBotones").style.display = "none";
+  const c = $("#mesaAccLista"); c.style.display = ""; c.innerHTML = `<p style="margin-bottom:8px;font-weight:bold">${titulo}</p>`;
+  if(!items.length){ c.innerHTML += `<p style="color:#888">No hay opciones disponibles.</p>`; }
+  items.forEach(it=>{
+    const b = document.createElement("button"); b.className="btn"; b.style.cssText="display:flex;width:100%;justify-content:space-between;margin-bottom:6px";
+    b.innerHTML = it.label; b.onclick = it.onPick; c.appendChild(b);
+  });
+}
+function pickMesa(titulo, filtro, fn){
+  const items = db.mesas.filter(filtro).map(x=>({
+    label:`${x.nombre} <span style="color:#888">${db.zonas.find(z=>z.id===x.zona)?.nombre||""}${x.lineas.length?" · "+eur(totalesTicket(x.lineas).total):" · libre"}</span>`,
+    onPick:()=>fn(x)
+  }));
+  pickLista(titulo, items);
+}
+function pickZona(fn){
+  pickLista("Elija zona:", db.zonas.map(z=>({label:z.nombre, onPick:()=>fn(z)})));
+}
+function setFormaMesa(m, forma){
+  m.forma = forma;
+  if(forma!=="rect"){ const s=Math.max(m.w||124, m.h||96); m.w=s; m.h=s; }  // lados iguales
+  guardar(); pintarMesas(); cerrarModal();
+}
+function setTamMesa(m, w, h){
+  m.w = w; m.h = h;
+  if((m.forma||"rect")!=="rect"){ const s=Math.max(w,h); m.w=s; m.h=s; }
+  guardar(); pintarMesas(); cerrarModal();
+}
+function moverTicket(origen, destino){
+  destino.lineas = origen.lineas.map(l=>({...l})); destino.cliente = origen.cliente;
+  origen.lineas = []; origen.cliente = null;
+  if(mesaActual===origen.id) mesaActual = destino.id;
+  guardar(); pintarMesas(); cerrarModal(); toast("Ticket movido a "+destino.nombre);
+}
+function unirMesas(origen, destino){
+  destino.lineas = destino.lineas.concat(origen.lineas.map(l=>({...l})));
+  if(!destino.cliente && origen.cliente) destino.cliente = origen.cliente;
+  origen.lineas = []; origen.cliente = null;
+  if(mesaActual===origen.id) mesaActual = destino.id;
+  guardar(); pintarMesas(); cerrarModal(); toast("Mesas unidas en "+destino.nombre);
+}
+
+/* ---------- Gestión de zonas ---------- */
+function pintarZonas(){
+  const c = $("#zonasLista"); c.innerHTML = "";
+  db.zonas.forEach(z=>{
+    const n = db.mesas.filter(m=>m.zona===z.id).length;
+    const row = document.createElement("div"); row.className = "zona-row";
+    row.innerHTML = `<input value="${z.nombre}" data-z="${z.id}"><span style="color:#888;font-size:12px">${n} mesas</span><button class="btn rojo" data-del="${z.id}">🗑️</button>`;
+    c.appendChild(row);
+  });
+}
+$("#btnZonas").onclick = ()=>{ pintarZonas(); abrirModal("modalZonas"); };
+$("#zonaAddBtn").onclick = ()=>{
+  const n = $("#zonaNueva").value.trim(); if(!n) return;
+  db.zonas.push({ id:"z"+Date.now().toString(36), nombre:n }); $("#zonaNueva").value = "";
+  guardar(); pintarZonas();
+};
+$("#zonasLista").oninput = e=>{
+  const id = e.target.dataset.z; if(!id) return;
+  const z = db.zonas.find(z=>z.id===id); if(z){ z.nombre = e.target.value; guardar(); }
+};
+$("#zonasLista").onclick = e=>{
+  const del = e.target.closest("[data-del]"); if(!del) return;
+  const id = del.dataset.del;
+  if(db.mesas.some(m=>m.zona===id)){ toast("Mueve o elimina antes las mesas de esa zona"); return; }
+  if(db.zonas.length<=1){ toast("Debe quedar al menos una zona"); return; }
+  db.zonas = db.zonas.filter(z=>z.id!==id); guardar(); pintarZonas(); pintarMesas();
+};
 function abrirMesa(m){
   if(ticketPendiente){
     if(m.lineas.length){ toast("Esa mesa ya está ocupada"); return; }
@@ -1856,8 +2738,8 @@ function ticketsSesion(){
 }
 function pintarCaja(){
   const ts = ticketsSesion();
-  const efectivo = ts.filter(t=>t.pago==="Efectivo").reduce((a,t)=>a+t.total,0);
-  const tarjeta  = ts.filter(t=>t.pago==="Tarjeta").reduce((a,t)=>a+t.total,0);
+  const efectivo = r2(ts.reduce((a,t)=> a + (t.pago==="Efectivo" ? t.total : (t.pago==="Mixto" && t.pagoDetalle ? r2(t.total - t.pagoDetalle.tarjeta) : 0)), 0));
+  const tarjeta  = r2(ts.reduce((a,t)=> a + (t.pago==="Tarjeta"  ? t.total : (t.pago==="Mixto" && t.pagoDetalle ? t.pagoDetalle.tarjeta : 0)), 0));
   const iva      = ts.reduce((a,t)=>a+t.iva,0);
   const total    = efectivo + tarjeta;
   $("#cajaResumen").innerHTML = `
@@ -1886,6 +2768,88 @@ $("#btnCerrarCaja").onclick = ()=>{
   });
   db.aperturaCaja = new Date().toISOString();
   guardar(); pintarCaja(); toast("Caja cerrada");
+};
+
+/* =========================================================
+   INFORMES DE VENTAS  (+ exportar CSV)
+   ========================================================= */
+function fechaHoyISO(){ const d=new Date(); const p=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()); }
+function ticketsRango(){
+  const dv=$("#infDesde").value, hv=$("#infHasta").value;
+  const d = dv ? new Date(dv+"T00:00:00").getTime() : -Infinity;
+  const h = hv ? new Date(hv+"T23:59:59.999").getTime() : Infinity;
+  return db.tickets.filter(t=>{ const x=new Date(t.fecha).getTime(); return x>=d && x<=h; });
+}
+function tablaInforme(titulo, filas, colNum="Importe"){
+  if(!filas.length) return `<h2 style="margin-top:24px">${titulo}</h2><p style="color:#888">Sin datos.</p>`;
+  let s = `<h2 style="margin-top:24px">${titulo}</h2><table class="datos" style="max-width:560px"><thead><tr><th>Concepto</th><th class="num">${colNum}</th></tr></thead><tbody>`;
+  filas.forEach(([k,v])=> s += `<tr><td>${k}</td><td class="num">${v}</td></tr>`);
+  return s + "</tbody></table>";
+}
+function pintarInformes(){
+  if(!$("#infDesde").value && !$("#infHasta").value){ $("#infDesde").value=fechaHoyISO(); $("#infHasta").value=fechaHoyISO(); }
+  const ts = ticketsRango();
+  const totalV = r2(ts.reduce((a,t)=>a+t.total,0));
+  const iva = r2(ts.reduce((a,t)=>a+t.iva,0));
+  const base = r2(totalV - iva);
+  const efe = r2(ts.reduce((a,t)=>a+(t.pago==="Efectivo"?t.total:(t.pago==="Mixto"&&t.pagoDetalle?r2(t.total-t.pagoDetalle.tarjeta):0)),0));
+  const tar = r2(ts.reduce((a,t)=>a+(t.pago==="Tarjeta"?t.total:(t.pago==="Mixto"&&t.pagoDetalle?t.pagoDetalle.tarjeta:0)),0));
+  const tkMedio = ts.length ? r2(totalV/ts.length) : 0;
+  // Agregados
+  const porUsr={}, porHora={}, porCat={}, porProd={};
+  ts.forEach(t=>{
+    porUsr[t.usuario] = r2((porUsr[t.usuario]||0) + t.total);
+    const hh = new Date(t.fecha).getHours(); porHora[hh] = r2((porHora[hh]||0) + t.total);
+    t.lineas.forEach(l=>{
+      const imp = r2(l.precio*l.uds);
+      const pr = db.productos.find(p=>p.id===l.prodId);
+      const cat = pr ? (db.categorias.find(c=>c.id===pr.cat)?.nombre || pr.cat) : "(otros)";
+      porCat[cat] = r2((porCat[cat]||0) + imp);
+      if(!porProd[l.nombre]) porProd[l.nombre] = {uds:0, imp:0};
+      porProd[l.nombre].uds = r2(porProd[l.nombre].uds + l.uds);
+      porProd[l.nombre].imp = r2(porProd[l.nombre].imp + imp);
+    });
+  });
+  const ordImp = o => Object.entries(o).sort((a,b)=>b[1]-a[1]);
+  const resumen = `
+    <div class="resumen-caja" style="max-width:560px">
+      <div class="fila"><span>Tickets</span><b>${ts.length}</b></div>
+      <div class="fila"><span>💵 Efectivo</span><b>${eur(efe)}</b></div>
+      <div class="fila"><span>💳 Tarjeta</span><b>${eur(tar)}</b></div>
+      <div class="fila"><span>Base imponible</span><b>${eur(base)}</b></div>
+      <div class="fila"><span>IVA repercutido</span><b>${eur(iva)}</b></div>
+      <div class="fila"><span>Ticket medio</span><b>${eur(tkMedio)}</b></div>
+      <div class="fila total"><span>Total ventas</span><b>${eur(totalV)}</b></div>
+    </div>`;
+  const topProd = ordImp(Object.fromEntries(Object.entries(porProd).map(([k,v])=>[k,v.imp]))).slice(0,15)
+                    .map(([k,v])=>[`${k} <span style="color:#888">(${porProd[k].uds} ud)</span>`, eur(v)]);
+  const horas = Object.entries(porHora).sort((a,b)=>a[0]-b[0]).map(([h,v])=>[`${String(h).padStart(2,"0")}:00 - ${String(+h+1).padStart(2,"0")}:00`, eur(v)]);
+  $("#infContenido").innerHTML =
+    resumen +
+    tablaInforme("Por categoría", ordImp(porCat).map(([k,v])=>[k,eur(v)])) +
+    tablaInforme("Productos más vendidos", topProd) +
+    tablaInforme("Por camarero", ordImp(porUsr).map(([k,v])=>[k,eur(v)])) +
+    tablaInforme("Por franja horaria", horas);
+}
+$("#infDesde").onchange = pintarInformes;
+$("#infHasta").onchange = pintarInformes;
+$("#infHoy").onclick = ()=>{ $("#infDesde").value=fechaHoyISO(); $("#infHasta").value=fechaHoyISO(); pintarInformes(); };
+$("#infMes").onclick = ()=>{ const d=new Date(); const p=n=>String(n).padStart(2,"0"); $("#infDesde").value=d.getFullYear()+"-"+p(d.getMonth()+1)+"-01"; $("#infHasta").value=fechaHoyISO(); pintarInformes(); };
+$("#infExport").onclick = ()=>{
+  const ts = ticketsRango();
+  if(!ts.length){ toast("No hay ventas en el rango seleccionado"); return; }
+  const num = n => n.toFixed(2).replace(".", ",");   // decimales con coma para Excel ES
+  const filas = [["Numero","Fecha","Hora","Usuario","Cliente","Pago","Base","IVA","Total"]];
+  ts.forEach(t=>{
+    const f = new Date(t.fecha), cli = db.clientes.find(c=>c.id===t.cliente);
+    filas.push([t.num, f.toLocaleDateString("es-ES"), f.toLocaleTimeString("es-ES"),
+      t.usuario, cli?cli.nombre:"", t.pago, num(t.base), num(t.iva), num(t.total)]);
+  });
+  const csv = "﻿" + filas.map(r=>r.map(c=>{ const s=String(c).replace(/"/g,'""'); return /[";\n]/.test(s)?`"${s}"`:s; }).join(";")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "informe-ventas-" + fechaHoyISO() + ".csv"; a.click(); URL.revokeObjectURL(a.href);
+  toast("CSV exportado ("+ts.length+" tickets)");
 };
 
 /* =========================================================
@@ -2082,6 +3046,11 @@ function pintarConfig(){
   const c = db.config;
   $("#cfgNombre").value=c.nombre; $("#cfgDir").value=c.dir; $("#cfgNif").value=c.nif;
   $("#cfgPie").value=c.pie; $("#cfgMesas").value=c.numMesas;
+  $("#cfgAutoImprimir").checked = !!(c.cajon && c.cajon.autoImprimir);
+  $("#cfgImprimirTarjeta").checked = !!(c.cajon && c.cajon.imprimirTarjeta);
+  $("#cfgPapel").value  = (c.cajon && c.cajon.papel==="58") ? "58" : "80";
+  $("#cfgCopias").value = String((c.cajon && c.cajon.copias) || 1);
+  $("#cfgCajonCmd").value = (c.cajon && c.cajon.comando) || "";
   const v = c.verifactu || {};
   $("#cfgVfActivo").value  = v.activo ? "si" : "no";
   $("#cfgVfEntorno").value = v.entorno==="produccion" ? "produccion" : "pruebas";
@@ -2099,6 +3068,25 @@ $("#cfgGuardar").onclick = ()=>{
   };
   guardar(); toast("Configuración guardada");
 };
+$("#cfgCajonGuardar").onclick = ()=>{
+  db.config.cajon = {
+    autoImprimir: $("#cfgAutoImprimir").checked,
+    imprimirTarjeta: $("#cfgImprimirTarjeta").checked,
+    papel: $("#cfgPapel").value==="58" ? "58" : "80",
+    copias: parseInt($("#cfgCopias").value)||1,
+    comando: $("#cfgCajonCmd").value.trim()
+  };
+  guardar(); aplicarConfigImpresion(); toast("Opciones de impresión y cajón guardadas");
+};
+$("#cfgProbarImpresion").onclick = ()=>{
+  const c = db.config;
+  mostrarRecibo({
+    id:"test", num:0, fecha:new Date().toISOString(), usuario:(usuario&&usuario.nombre)||"—",
+    cliente:null, lineas:[{nombre:"PRUEBA DE IMPRESIÓN", precio:0, uds:1, iva:0}],
+    pago:"Tarjeta", entregado:0, total:0, iva:0, base:0
+  });
+};
+$("#cfgProbarCajon").onclick = ()=>Cajon.abrir(true);
 $("#cfgVfGuardar").onclick = ()=>{
   const activo = $("#cfgVfActivo").value==="si";
   const entorno = $("#cfgVfEntorno").value;
@@ -2157,12 +3145,41 @@ function construirDesdePlantilla(p){
       cat, emoji: pr.emoji || emojiCat[cat] || "📦"
     };
   });
-  // Mesas
+  // Zonas (acepta lista de textos ["Barra","Terraza"] o de objetos [{id,nombre}])
+  const slug = s => s.toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"") || "zona";
+  let zonas = (p.zonas||[]).map((z,i)=>{
+    const nombre = (typeof z==="string" ? z : (z.nombre||z.id||"Zona "+(i+1))).toString().trim();
+    return { id: (typeof z==="object" && z.id ? z.id : slug(nombre)) , nombre };
+  });
+  if(!zonas.length) zonas = [{id:"barra",nombre:"Barra"},{id:"terraza",nombre:"Terraza"},{id:"salon",nombre:"Salón"}];
+  // resuelve el nombre/id de zona escrito por el usuario al id real
+  const zonaId = ref => {
+    if(!ref) return zonas[0].id;
+    const r = ref.toString().trim().toLowerCase();
+    const z = zonas.find(z=>z.id.toLowerCase()===r || z.nombre.toLowerCase()===r);
+    return z ? z.id : zonas[0].id;
+  };
+  // Mesas: lista explícita {nombre,zona} o, si no, numMesas en la primera zona
   const numMesas = Math.max(0, Math.min(50, parseInt(n.numMesas)||10));
-  const mesas = Array.from({length:numMesas},(_,i)=>({id:"m"+(i+1), nombre:"Mesa "+(i+1), lineas:[], cliente:null}));
+  const contZona = {};   // contador por zona para auto-colocar en rejilla
+  const colocar = zid => { const i = contZona[zid]||0; contZona[zid]=i+1; return {x:12+(i%5)*148, y:12+Math.floor(i/5)*128}; };
+  let mesas;
+  if(Array.isArray(p.mesas) && p.mesas.length){
+    mesas = p.mesas.map((m,i)=>{
+      const zid = zonaId(typeof m==="string" ? null : m.zona);
+      const pos = colocar(zid);
+      return { id:"m"+(i+1), nombre:(typeof m==="string"? m : (m.nombre||"Mesa "+(i+1))).toString().trim(),
+               zona:zid, x:pos.x, y:pos.y, lineas:[], cliente:null };
+    });
+  } else {
+    const z0 = zonas[0].id;
+    mesas = Array.from({length:numMesas},(_,i)=>{ const pos=colocar(z0); return {id:"m"+(i+1), nombre:"Mesa "+(i+1), zona:z0, x:pos.x, y:pos.y, lineas:[], cliente:null}; });
+  }
   return {
     usuarios, categorias, productos, clientes:[],
-    tickets:[], numTicket:1, mesas, cierres:[], aperturaCaja:new Date().toISOString(),
+    tickets:[], numTicket:1,
+    zonas,
+    mesas, cierres:[], aperturaCaja:new Date().toISOString(),
     config:{
       nombre:(n.nombre||"Mi Negocio").toString().trim(),
       dir:(n.direccion||n.dir||"").toString().trim(),
@@ -2230,14 +3247,48 @@ function cerrarModal(){
   $("#overlay").classList.remove("visible");
 }
 $$("[data-cerrar]").forEach(b=> b.onclick = cerrarModal);
-$("#overlay").onclick = e=>{ if(e.target.id==="overlay") cerrarModal(); };
+$("#overlay").onclick = e=>{ if(e.target.id==="overlay" && !split) cerrarModal(); };
 $("#pinInput")?.addEventListener("keydown", e=>{ if(e.key==="Enter") $("#btnPinOk").click(); });
 
 /* =========================================================
    ARRANQUE
    ========================================================= */
-cargar();
-pintarLogin();
+(async ()=>{
+  await cargar();       // IndexedDB es asíncrono: esperamos a tener los datos
+  aplicarConfigImpresion();   // aplica el ancho de papel guardado (80/58 mm)
+  pintarLogin();
+  Cajon.init();         // recupera el cajón ya autorizado, si lo hay
+})();
+
+/* ---------- PWA: registro del service worker (funciona sin conexión) ----------
+   Requiere servir la app por http(s) o localhost; con file:// se ignora. */
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js")
+      .then(()=>console.info("TPV: service worker registrado (modo offline activo)"))
+      .catch(e=>console.warn("TPV: no se pudo registrar el service worker:", e));
+  });
+}
+
+/* ---------- PWA: botón "Instalar app" ---------- */
+let promptInstalar = null;
+window.addEventListener("beforeinstallprompt", e=>{
+  e.preventDefault();                 // evita el aviso automático del navegador
+  promptInstalar = e;                 // lo guardamos para lanzarlo desde nuestro botón
+  $("#btnInstalar").style.display = "";
+});
+$("#btnInstalar").onclick = async ()=>{
+  if(!promptInstalar) return;
+  promptInstalar.prompt();
+  const { outcome } = await promptInstalar.userChoice;
+  if(outcome === "accepted") toast("Instalando la aplicación…");
+  promptInstalar = null;
+  $("#btnInstalar").style.display = "none";
+};
+window.addEventListener("appinstalled", ()=>{
+  $("#btnInstalar").style.display = "none";
+  toast("Aplicación instalada ✓");
+});
 </script>
 </body>
 </html>

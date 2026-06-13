@@ -1,0 +1,31 @@
+Windows Registry Editor Version 5.00
+
+; ============================================================
+;  Registra el protocolo  opencash://  en Windows para que el
+;  TPV pueda abrir el cajon portamonedas con la herramienta
+;  "Open Cash Button" de APPROX (sin gastar papel).
+;
+;  PASOS:
+;  1) Edita la RUTA del .exe de abajo (linea "command") y pon
+;     la ubicacion real de tu "Open Cash Button" de APPROX.
+;     OJO: las barras deben ir DOBLES  \\  como en el ejemplo.
+;  2) Guarda el archivo y haz doble clic para importarlo.
+;     (Acepta el aviso de seguridad de Windows.)
+;  3) En el TPV -> Configuracion -> campo "Comando cajon"
+;     escribe:   opencash://
+;  4) Pulsa el boton  💰 Cajon : se abrira el cajon.
+;
+;  Nota: la primera vez el navegador preguntara si permites
+;  abrir la aplicacion; marca "recordar" para no repetir.
+; ============================================================
+
+[HKEY_CLASSES_ROOT\opencash]
+@="URL:Abrir cajon portamonedas"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\opencash\shell]
+
+[HKEY_CLASSES_ROOT\opencash\shell\open]
+
+[HKEY_CLASSES_ROOT\opencash\shell\open\command]
+@="\"C:\\Program Files (x86)\\APPROX\\OpenCashButton\\OpenCashButton.exe\" \"%1\""
