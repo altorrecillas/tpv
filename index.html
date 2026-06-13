@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TPV - Punto de Venta</title>
+<style>
+:root{
+  --verde:#6fb245; --verde-osc:#4e8f2c; --verde-claro:#a8d08d;
+  --azul:#3d6cb3; --azul-claro:#dde7f5; --gris:#e8e8e3; --gris-osc:#c8c8c0;
+  --panel:#f4f4f0; --borde:#b5b5ad; --rojo:#cc4b37; --naranja:#e8943a;
+  --texto:#333;
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:"Segoe UI",Tahoma,Verdana,sans-serif; font-size:14px; color:var(--texto);
+  background:#d8d8d0; overflow:hidden; user-select:none;
+}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit; font-size:14px; padding:6px 8px; border:1px solid var(--borde); border-radius:3px; background:#fff;}
+input:focus,select:focus{outline:2px solid var(--azul); outline-offset:-1px;}
+
+/* ===== Barra de título estilo Openbravo ===== */
+#titlebar{
+  height:34px; display:flex; align-items:center; justify-content:space-between; padding:0 10px;
+  background:linear-gradient(to bottom,#8cc63f,#5a9e2f); color:#fff; font-weight:bold;
+  text-shadow:0 1px 2px rgba(0,0,0,.4); flex:0 0 auto;
+}
+#titlebar .logo{display:flex; align-items:center; gap:8px;}
+#titlebar .logo .b{width:20px;height:20px;border-radius:50%;background:#fff;color:#5a9e2f;display:flex;align-items:center;justify-content:center;font-size:13px;}
+#infobar{
+  height:30px; background:linear-gradient(to bottom,#ffffff,#e9f3dc); border-bottom:1px solid var(--borde);
+  display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; color:#555; flex:0 0 auto;
+}
+#infobar .b{width:18px;height:18px;border-radius:50%;background:var(--verde);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;}
+
+/* ===== Layout principal ===== */
+#app{display:none; flex-direction:column; height:100%;}
+#main{flex:1; display:flex; min-height:0;}
+#sidebar{
+  width:185px; flex:0 0 auto; background:var(--panel); border-right:1px solid var(--borde);
+  overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:8px;
+}
+.menu-panel{border:1px solid var(--borde); border-radius:4px; background:#fff; overflow:hidden;}
+.menu-panel h3{
+  background:linear-gradient(to bottom,#e9f0fa,#c5d4ea); padding:6px 10px; font-size:13px; color:#2d4a73;
+  border-bottom:1px solid var(--borde); display:flex; justify-content:space-between; align-items:center;
+}
+.menu-panel .item{
+  display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; border:none; background:#fff;
+  text-align:left; font-size:13px; border-bottom:1px solid #eee;
+}
+.menu-panel .item:last-child{border-bottom:none;}
+.menu-panel .item:hover{background:var(--azul-claro);}
+.menu-panel .item.activo{background:var(--azul); color:#fff;}
+#content{flex:1; min-width:0; display:flex; flex-direction:column; background:#fff; overflow:hidden;}
+
+/* ===== Barra de estado ===== */
+#statusbar{
+  height:30px; background:var(--gris); border-top:1px solid var(--borde); display:flex;
+  align-items:center; justify-content:space-between; padding:0 10px; font-size:12px; flex:0 0 auto;
+}
+#statusbar .chip{background:#fff; border:1px solid var(--borde); border-radius:3px; padding:2px 10px;}
+#sbMesas{display:none; cursor:pointer; font-size:12px; color:#2d4a73; font-weight:bold;}
+#sbMesas:active{background:var(--azul-claro);}
+
+/* ===== Botón hamburguesa (móvil) ===== */
+#btnMenu{
+  display:none; background:rgba(255,255,255,.25); border:1px solid rgba(255,255,255,.5); color:#fff;
+  border-radius:4px; padding:3px 10px; font-size:16px;
+}
+
+/* ===== Login ===== */
+#login{
+  height:100%; display:flex; flex-direction:column; background:#d8d8d0;
+}
+#login .cuerpo{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:20px; overflow-y:auto;}
+#login .marca{
+  background:#fff; border:2px solid var(--gris-osc); border-radius:18px; padding:25px 50px; text-align:center;
+  box-shadow:0 3px 10px rgba(0,0,0,.15);
+}
+#login .marca h1{font-size:40px; font-weight:normal; color:#555;}
+#login .marca h1 b{color:var(--verde-osc);}
+#login .marca p{color:var(--verde); font-style:italic; margin-top:4px;}
+#login .desc{text-align:center; font-size:12px; color:#666; max-width:520px; line-height:1.6;}
+#usuarios{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; max-width:600px;}
+#usuarios button{
+  width:150px; padding:14px 10px; border:1px solid var(--borde); border-radius:6px;
+  background:linear-gradient(to bottom,#ffffff,#dce6f2); font-size:14px; font-weight:bold; color:#2d4a73;
+  display:flex; flex-direction:column; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,.1);
+}
+#usuarios button:active{background:var(--azul-claro);}
+#usuarios .icono{font-size:28px;}
+
+/* ===== Vistas ===== */
+.vista{display:none; flex:1; min-height:0; flex-direction:column; overflow:hidden;}
+.vista.visible{display:flex;}
+.toolbar{
+  flex:0 0 auto; padding:8px 10px; background:var(--panel); border-bottom:1px solid var(--borde);
+  display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+}
+.btn{
+  padding:8px 14px; border:1px solid var(--borde); border-radius:4px; font-size:13px;
+  background:linear-gradient(to bottom,#ffffff,#e3e9f2); color:#2d4a73; font-weight:600;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.btn:active{background:var(--azul-claro);}
+.btn.verde{background:linear-gradient(to bottom,#9ed46e,#6fb245); color:#fff; border-color:var(--verde-osc); text-shadow:0 1px 1px rgba(0,0,0,.25);}
+.btn.rojo{background:linear-gradient(to bottom,#e87b66,#cc4b37); color:#fff; border-color:#a33; text-shadow:0 1px 1px rgba(0,0,0,.25);}
+.btn.azul{background:linear-gradient(to bottom,#6b94cf,#3d6cb3); color:#fff; border-color:#2d5494; text-shadow:0 1px 1px rgba(0,0,0,.25);}
+
+/* ===== Pantalla de ventas ===== */
+#vVentas{flex-direction:column;}
+#ventasSup{flex:1.15; display:flex; min-height:0; border-bottom:2px solid var(--borde);}
+#ticketZona{flex:1; min-width:0; display:flex; flex-direction:column; border-right:1px solid var(--borde);}
+#ticketCab{padding:6px 10px; background:var(--panel); border-bottom:1px solid var(--borde); display:flex; gap:6px; align-items:center; flex-wrap:wrap;}
+#ticketCab .nombre{font-weight:bold; color:#2d4a73; flex:1; min-width:90px;}
+#ticketLineas{flex:1; overflow-y:auto;}
+#ticketLineas table{width:100%; border-collapse:collapse; font-size:13px;}
+#ticketLineas th{
+  position:sticky; top:0; background:linear-gradient(to bottom,#fff,#e6e6e0); text-align:left;
+  padding:6px 8px; border-bottom:1px solid var(--borde); font-size:12px; color:#555;
+}
+#ticketLineas td{padding:7px 8px; border-bottom:1px solid #eee;}
+#ticketLineas tr.sel td{background:var(--azul); color:#fff;}
+#ticketLineas .num{text-align:right; white-space:nowrap;}
+#totales{
+  flex:0 0 auto; border-top:1px solid var(--borde); background:var(--panel);
+  display:flex; justify-content:flex-end; gap:18px; padding:8px 12px; font-size:13px; flex-wrap:wrap;
+}
+#totales div{text-align:right;}
+#totales .lbl{font-size:11px; color:#777;}
+#totales .val{font-weight:bold; font-size:15px;}
+#totales .total .val{font-size:20px; color:var(--verde-osc);}
+
+/* Teclado numérico */
+#keypad{
+  flex:0 0 auto; width:230px; padding:8px; background:var(--panel); display:flex; flex-direction:column; gap:6px;
+}
+#kpDisplay{
+  background:#fff; border:1px solid var(--borde); border-radius:4px; padding:8px; text-align:right;
+  font-size:20px; font-family:Consolas,monospace; min-height:40px; color:#2d4a73;
+}
+#kpGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; flex:1;}
+#kpGrid button{
+  border:1px solid var(--borde); border-radius:6px; font-size:18px; font-weight:bold; min-height:44px;
+  background:linear-gradient(to bottom,#ffffff,#dce6f2); color:#2d4a73; box-shadow:0 2px 3px rgba(0,0,0,.12);
+}
+#kpGrid button:active{transform:translateY(1px); box-shadow:none;}
+#kpGrid .op{background:linear-gradient(to bottom,#6b94cf,#3d6cb3); color:#fff;}
+#kpGrid .ce{background:linear-gradient(to bottom,#e87b66,#cc4b37); color:#fff;}
+#kpGrid .ok{background:linear-gradient(to bottom,#9ed46e,#6fb245); color:#fff; grid-column:span 2;}
+
+/* Categorías y productos */
+#ventasInf{flex:1; display:flex; min-height:0;}
+#cats{
+  flex:0 0 auto; width:130px; overflow-y:auto; background:var(--panel); border-right:1px solid var(--borde);
+  display:flex; flex-direction:column; gap:6px; padding:8px;
+}
+#cats button{
+  border:1px solid var(--borde); border-radius:6px; padding:10px 6px; font-size:12px; font-weight:bold;
+  background:linear-gradient(to bottom,#fff,#e6e6e0); display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+#cats button .icono{font-size:20px;}
+#cats button.activo{background:linear-gradient(to bottom,#9ed46e,#6fb245); color:#fff; border-color:var(--verde-osc);}
+#prods{
+  flex:1; overflow-y:auto; padding:8px; display:grid; gap:8px; align-content:start;
+  grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+}
+#prods button{
+  border:1px solid var(--borde); border-radius:6px; padding:8px 4px; background:linear-gradient(to bottom,#fff,#eef2e6);
+  display:flex; flex-direction:column; align-items:center; gap:3px; min-height:84px; box-shadow:0 1px 3px rgba(0,0,0,.1);
+}
+#prods button:active{background:var(--azul-claro);}
+#prods .icono{font-size:26px;}
+#prods .nom{font-size:11px; font-weight:bold; text-align:center; line-height:1.2;}
+#prods .precio{font-size:11px; color:var(--verde-osc); font-weight:bold;}
+
+/* ===== Mesas ===== */
+#plano{
+  flex:1; overflow-y:auto; padding:20px; background:#eef5e9;
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:18px; align-content:start;
+}
+.mesa{
+  border:1px solid var(--borde); border-radius:10px; min-height:110px; padding:10px;
+  background:linear-gradient(to bottom,#ffffff,#dce6f2); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:6px; font-weight:bold; color:#2d4a73;
+  box-shadow:0 2px 5px rgba(0,0,0,.12); cursor:pointer;
+}
+.mesa .icono{font-size:30px;}
+.mesa.ocupada{background:linear-gradient(to bottom,#b8e09a,#8cc63f); border-color:var(--verde-osc); color:#234d0f;}
+.mesa .info{font-size:11px; font-weight:normal;}
+#planoTitulo{font-size:26px; color:var(--verde-osc); font-weight:bold; text-align:center; padding:12px 0 0;}
+
+/* ===== Tablas administración ===== */
+.admin-layout{flex:1; display:flex; min-height:0;}
+.lista-panel{width:270px; flex:0 0 auto; border-right:1px solid var(--borde); display:flex; flex-direction:column; min-height:0; background:var(--panel);}
+.lista-panel .buscar{padding:8px; border-bottom:1px solid var(--borde);}
+.lista-panel .buscar input{width:100%;}
+.lista-items{flex:1; overflow-y:auto;}
+.lista-items .item{
+  width:100%; text-align:left; padding:9px 12px; border:none; border-bottom:1px solid #e0e0d8;
+  background:#fff; font-size:13px; display:flex; justify-content:space-between; gap:6px;
+}
+.lista-items .item:hover{background:var(--azul-claro);}
+.lista-items .item.sel{background:var(--azul); color:#fff;}
+.form-panel{flex:1; overflow-y:auto; padding:16px;}
+.form-panel h2{font-size:20px; color:#2d4a73; margin-bottom:14px; border-bottom:2px solid var(--gris); padding-bottom:8px;}
+.campo{margin-bottom:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.campo label{width:130px; flex:0 0 auto; font-size:13px; color:#555;}
+.campo input,.campo select{flex:1; min-width:140px; max-width:300px;}
+.form-acciones{margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;}
+
+/* Tabla genérica */
+.tabla-scroll{flex:1; overflow:auto; padding:10px;}
+table.datos{width:100%; border-collapse:collapse; font-size:13px;}
+table.datos th{background:linear-gradient(to bottom,#fff,#e6e6e0); padding:8px; border:1px solid var(--gris-osc); text-align:left; position:sticky; top:-10px;}
+table.datos td{padding:7px 8px; border:1px solid #e0e0d8;}
+table.datos tr:hover td{background:var(--azul-claro); cursor:pointer;}
+table.datos .num{text-align:right;}
+
+/* ===== Modales ===== */
+#overlay{
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:50;
+  align-items:center; justify-content:center; padding:14px;
+}
+#overlay.visible{display:flex;}
+.modal{
+  background:#fff; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,.4); width:100%; max-width:520px;
+  max-height:92vh; display:flex; flex-direction:column; overflow:hidden;
+}
+.modal h2{
+  background:linear-gradient(to bottom,#8cc63f,#5a9e2f); color:#fff; padding:10px 16px; font-size:16px;
+  text-shadow:0 1px 2px rgba(0,0,0,.3); display:flex; justify-content:space-between; align-items:center;
+}
+.modal h2 button{background:none; border:none; color:#fff; font-size:20px;}
+.modal .cuerpo{padding:16px; overflow-y:auto;}
+.modal .pie{padding:12px 16px; border-top:1px solid var(--gris); display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;}
+
+/* Pago */
+#pagoTotal{font-size:34px; font-weight:bold; color:var(--verde-osc); text-align:center; margin-bottom:12px;}
+#pagoMetodos{display:flex; gap:10px; justify-content:center; margin-bottom:14px; flex-wrap:wrap;}
+#pagoMetodos button{
+  padding:12px 18px; border:1px solid var(--borde); border-radius:6px; font-size:14px; font-weight:bold;
+  background:linear-gradient(to bottom,#fff,#e3e9f2); display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+#pagoMetodos button.sel{background:linear-gradient(to bottom,#9ed46e,#6fb245); color:#fff; border-color:var(--verde-osc);}
+#pagoEntregado{display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:10px; flex-wrap:wrap;}
+#pagoEntregado input{font-size:22px; width:140px; text-align:right;}
+#pagoRapido{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-bottom:10px;}
+#pagoRapido button{padding:8px 12px; border:1px solid var(--borde); border-radius:4px; background:#f4f4f0; font-weight:bold;}
+#pagoCambio{text-align:center; font-size:18px;}
+#pagoCambio b{color:var(--azul); font-size:24px;}
+
+/* Recibo */
+#recibo{font-family:Consolas,"Courier New",monospace; font-size:12px; white-space:pre-wrap; background:#fffef5; border:1px dashed #999; padding:14px; max-width:320px; margin:0 auto;}
+
+/* Cierre de caja */
+.resumen-caja{max-width:480px;}
+.resumen-caja .fila{display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px solid #eee; font-size:14px;}
+.resumen-caja .fila.total{font-size:18px; font-weight:bold; color:var(--verde-osc); border-top:2px solid var(--gris-osc);}
+
+/* Toast */
+#toast{
+  position:fixed; bottom:46px; left:50%; transform:translateX(-50%); background:#333; color:#fff;
+  padding:10px 22px; border-radius:20px; font-size:13px; opacity:0; transition:opacity .3s; z-index:99; pointer-events:none;
+}
+#toast.visible{opacity:.95;}
+
+/* ===== Impresión ===== */
+@media print{
+  body *{visibility:hidden;}
+  #overlay,#overlay *{visibility:hidden;}
+  #overlay.imprimiendo, #overlay.imprimiendo #modalRecibo, #overlay.imprimiendo #modalRecibo *{visibility:visible;}
+  #overlay.imprimiendo{position:absolute; inset:0; background:#fff; padding:0;}
+  #overlay.imprimiendo .modal{box-shadow:none; max-width:none;}
+  #overlay.imprimiendo .modal h2, #overlay.imprimiendo .modal .pie{display:none;}
+}
+
+/* Barra de pestañas móvil, total del teclado y botón cobrar de la mesa (ocultos en escritorio) */
+#ventasTabs{display:none;}
+#kpTotal{display:none;}
+#btnCobrarMesa{display:none;}
+
+/* ===== Responsive ===== */
+@media (max-width:900px){
+  #btnMenu{display:block;}
+  #sidebar{
+    position:fixed; left:-240px; top:64px; bottom:30px; z-index:40; transition:left .25s;
+    box-shadow:3px 0 12px rgba(0,0,0,.3); width:220px;
+  }
+  #sidebar.abierto{left:0;}
+  #keypad{width:178px;}
+  #cats{width:104px;}
+  #prods{grid-template-columns:repeat(auto-fill,minmax(82px,1fr));}
+  .lista-panel{width:230px;}
+  .campo label{width:100%;}
+}
+
+/* ===== Móvil / tablet vertical ===== */
+@media (max-width:640px){
+  body{font-size:15px;}
+  #infobar{display:none;}
+  #sidebar{top:34px; bottom:0;}
+
+  /* La pantalla de ventas pasa a pestañas: una cosa a pantalla completa */
+  #vVentas{position:relative;}
+  #ventasSup, #ventasInf{min-height:0;}
+
+  /* Tres pestañas: Productos / Mesa / Cobro. Se muestra una cada vez */
+  #vVentas.m-productos #ventasSup{display:none;}
+  #vVentas.m-productos #ventasInf{display:flex;}
+
+  #vVentas.m-mesa #ventasInf{display:none;}
+  #vVentas.m-mesa #ventasSup{display:flex;}
+  #vVentas.m-mesa #keypad{display:none;}
+  #vVentas.m-mesa #ticketZona{display:flex;}
+
+  #vVentas.m-cobro #ventasInf{display:none;}
+  #vVentas.m-cobro #ventasSup{display:flex;}
+  #vVentas.m-cobro #ticketZona{display:none;}
+  #vVentas.m-cobro #keypad{display:flex;}
+
+  /* --- Vista Productos --- */
+  #ventasInf{flex:1; flex-direction:column; border-bottom:none;}
+  #cats{
+    width:100%; flex:0 0 auto; flex-direction:row; overflow-x:auto; overflow-y:hidden;
+    gap:6px; padding:8px; border-right:none; border-bottom:1px solid var(--borde); white-space:nowrap;
+  }
+  #cats button{flex:0 0 auto; min-width:78px; padding:8px 10px;}
+  #cats button .icono{font-size:22px;}
+  #prods{
+    grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; padding:10px;
+  }
+  #prods button{min-height:96px; padding:10px 6px;}
+  #prods .icono{font-size:30px;}
+  #prods .nom{font-size:12px;}
+  #prods .precio{font-size:12px;}
+
+  /* --- Vista Mesa (lo que hay en la mesa) --- */
+  #ventasSup{flex:1; flex-direction:column; border-bottom:none;}
+  #ticketZona{border-right:none; flex:1; min-height:0;}
+  #ticketCab{position:sticky; top:0; z-index:2;}
+  #ticketCab .btn{padding:9px 12px; font-size:14px;}
+  #ticketLineas td{padding:12px 8px;}
+  #totales{justify-content:space-between; gap:8px; padding:12px;}
+  #totales .total .val{font-size:24px;}
+  #btnCobrarMesa{
+    display:block; flex:0 0 auto; margin:0; border-radius:0; font-size:19px; padding:16px;
+    padding-bottom:calc(16px + env(safe-area-inset-bottom));
+  }
+
+  /* --- Vista Cobro (teclado) --- */
+  #keypad{width:100%; flex:1; min-height:0; padding:10px 10px calc(10px + env(safe-area-inset-bottom));}
+  #kpTotal{display:block; text-align:center; font-size:16px; color:#555; padding:4px 0 8px;}
+  #kpTotal b{font-size:26px; color:var(--verde-osc);}
+  #kpDisplay{font-size:24px; min-height:48px;}
+  #kpGrid{gap:8px; flex:1;}
+  #kpGrid button{min-height:54px; font-size:20px;}
+  #kpGrid .ok{min-height:60px; font-size:19px;}
+
+  /* Barra de pestañas inferior */
+  #ventasTabs{
+    display:flex; order:3; flex:0 0 auto; border-top:1px solid var(--borde);
+    background:var(--panel); padding-bottom:env(safe-area-inset-bottom);
+  }
+  #ventasTabs button{
+    flex:1; border:none; background:var(--panel); padding:13px 4px; font-size:13px; font-weight:bold;
+    color:#2d4a73; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border-top:3px solid transparent;
+  }
+  #ventasTabs button.activo{background:#fff; border-top-color:var(--verde); color:var(--verde-osc);}
+  #ventasTabs #tabMesaInfo{font-size:11px; color:#777; font-weight:normal;}
+
+  /* Botón "volver a mesas" en la barra de estado (sólo móvil) */
+  #sbMesas{display:inline-block;}
+
+  /* Mesas */
+  #plano{grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); gap:12px; padding:12px;}
+  #planoTitulo{font-size:22px;}
+  .mesa{min-height:96px;}
+
+  /* Administración: lista arriba, ficha abajo */
+  .admin-layout{flex-direction:column;}
+  .lista-panel{width:100%; max-height:42%;}
+  .form-panel{padding:12px;}
+  .campo input, .campo select{max-width:none; width:100%;}
+
+  /* Tablas con scroll horizontal para que no se aplasten */
+  .tabla-scroll{padding:0;}
+  table.datos{font-size:12px; min-width:520px;}
+
+  /* Toolbars y botones más cómodos al tacto */
+  .toolbar{padding:8px;}
+  .btn{padding:10px 14px;}
+
+  /* Login */
+  #login .marca{padding:18px 24px;}
+  #login .marca h1{font-size:26px;}
+  #usuarios button{width:46%;}
+
+  /* Modales a pantalla casi completa */
+  .modal{max-width:100%; max-height:96vh;}
+  #toast{bottom:80px;}
+}
+
+/* Pantallas muy estrechas */
+@media (max-width:380px){
+  #prods{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));}
+  #titlebar .logo{font-size:13px;}
+  #kpGrid button{min-height:46px; font-size:17px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login">
+  <div id="titlebarLogin">
+    <div id="titlebar">
+      <div class="logo"><span class="b">b</span> TPV - Punto de Venta</div>
+      <span id="relojLogin"></span>
+    </div>
+    <div id="infobar"><span class="b">b</span> Un punto de venta diseñado para pantallas táctiles.</div>
+  </div>
+  <div class="cuerpo">
+    <div class="marca">
+      <h1>Bar <b>Woodpeckers</b></h1>
+      <p>tu punto de venta táctil</p>
+    </div>
+    <div class="desc">
+      Seleccione su usuario para iniciar sesión. Los datos se guardan localmente en este navegador.
+    </div>
+    <div id="usuarios"></div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div id="titlebar">
+    <div class="logo"><button id="btnMenu">☰</button><span class="b">b</span> TPV - Punto de Venta</div>
+    <span id="reloj"></span>
+  </div>
+  <div id="infobar"><span class="b">b</span> Un punto de venta diseñado para pantallas táctiles.</div>
+
+  <div id="main">
+    <div id="sidebar">
+      <div class="menu-panel">
+        <h3>Principal</h3>
+        <button class="item" data-vista="ventas">🛒 Ventas</button>
+        <button class="item" data-vista="mesas">🍽️ Mesas</button>
+        <button class="item" data-vista="historial">📋 Editar ventas</button>
+        <button class="item" data-vista="caja">💶 Cierre de caja</button>
+      </div>
+      <div class="menu-panel" data-rol="admin">
+        <h3>Administración</h3>
+        <button class="item" data-vista="clientes">👥 Clientes</button>
+        <button class="item" data-vista="productos">📦 Productos</button>
+        <button class="item" data-vista="categorias">🗂️ Categorías</button>
+        <button class="item" data-vista="usuarios">🧑‍💼 Usuarios</button>
+      </div>
+      <div class="menu-panel" data-rol="admin">
+        <h3>Sistema</h3>
+        <button class="item" data-vista="config">⚙️ Configuración</button>
+        <button class="item" id="btnSalir">🚪 Salir</button>
+      </div>
+      <div class="menu-panel">
+        <h3>Sesión</h3>
+        <button class="item" id="btnSalir2">🚪 Cerrar sesión</button>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- ===== VENTAS ===== -->
+      <div class="vista m-productos" id="vVentas">
+        <div id="ventasSup">
+          <div id="ticketZona">
+            <div id="ticketCab">
+              <span class="nombre" id="ticketNombre">Ticket</span>
+              <button class="btn" id="btnCliente">👤 <span id="lblCliente">Cliente</span></button>
+              <button class="btn" id="btnMenosUd">➖</button>
+              <button class="btn" id="btnMasUd">➕</button>
+              <button class="btn rojo" id="btnBorrarLinea">🗑️ Línea</button>
+              <button class="btn rojo" id="btnCancelarTicket">✖ Cancelar</button>
+            </div>
+            <div id="ticketLineas">
+              <table>
+                <thead><tr><th>Artículo</th><th class="num">Precio</th><th class="num">Uds</th><th class="num">IVA</th><th class="num">Importe</th></tr></thead>
+                <tbody id="ticketBody"></tbody>
+              </table>
+            </div>
+            <div id="totales">
+              <div><div class="lbl">Subtotal</div><div class="val" id="tSubtotal">0,00 €</div></div>
+              <div><div class="lbl">IVA</div><div class="val" id="tIva">0,00 €</div></div>
+              <div class="total"><div class="lbl">Total</div><div class="val" id="tTotal">0,00 €</div></div>
+            </div>
+            <button id="btnCobrarMesa" class="btn verde">💶 Cobrar</button>
+          </div>
+          <div id="keypad">
+            <div id="kpTotal">Total <b id="kpTotalVal">0,00 €</b></div>
+            <div id="kpDisplay">&nbsp;</div>
+            <div id="kpGrid">
+              <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="ce" data-k="CE">CE</button>
+              <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="+">+</button>
+              <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="-">−</button>
+              <button data-k="0">0</button><button data-k=".">·</button><button class="op" data-k="uds" title="Aplicar unidades">✕ uds</button><button class="op" data-k="precio" title="Cambiar precio">€</button>
+              <button class="ok" data-k="cobrar">💶 Cobrar</button><button class="op" data-k="aparcar" title="Guardar en mesa">🍽️</button><button class="ce" data-k="del">⌫</button>
+            </div>
+          </div>
+        </div>
+        <div id="ventasInf">
+          <div id="cats"></div>
+          <div id="prods"></div>
+        </div>
+        <div id="ventasTabs">
+          <button id="tabProductos" class="activo">🛒 Productos</button>
+          <button id="tabMesa">🧾 Mesa <span id="tabMesaInfo">(0)</span></button>
+          <button id="tabCobro">💶 Cobro</button>
+        </div>
+      </div>
+
+      <!-- ===== MESAS ===== -->
+      <div class="vista" id="vMesas">
+        <div class="toolbar">
+          <button class="btn azul" id="btnLlevar">🛍️ Venta directa / Para llevar</button>
+          <span style="flex:1"></span>
+          <span style="font-size:12px;color:#777">Pulse una mesa para abrir su ticket</span>
+        </div>
+        <div id="planoTitulo">Restaurante</div>
+        <div id="plano"></div>
+      </div>
+
+      <!-- ===== HISTORIAL ===== -->
+      <div class="vista" id="vHistorial">
+        <div class="toolbar">
+          <b style="color:#2d4a73">Tickets cerrados</b>
+          <span style="flex:1"></span>
+          <input type="date" id="histFecha">
+          <button class="btn" id="histHoy">Hoy</button>
+          <button class="btn" id="histTodos">Todos</button>
+        </div>
+        <div class="tabla-scroll">
+          <table class="datos">
+            <thead><tr><th>Nº</th><th>Fecha</th><th>Usuario</th><th>Cliente</th><th>Pago</th><th class="num">Total</th></tr></thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== CIERRE DE CAJA ===== -->
+      <div class="vista" id="vCaja">
+        <div class="toolbar"><b style="color:#2d4a73">Cierre de caja</b></div>
+        <div class="form-panel">
+          <div class="resumen-caja" id="cajaResumen"></div>
+          <div class="form-acciones">
+            <button class="btn verde" id="btnCerrarCaja">💶 Cerrar caja</button>
+          </div>
+          <h2 style="margin-top:28px">Cierres anteriores</h2>
+          <table class="datos" id="cajaCierres" style="max-width:560px">
+            <thead><tr><th>Apertura</th><th>Cierre</th><th class="num">Tickets</th><th class="num">Total</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== CLIENTES ===== -->
+      <div class="vista" id="vClientes">
+        <div class="toolbar">
+          <b style="color:#2d4a73">Clientes</b><span style="flex:1"></span>
+          <button class="btn verde" id="cliNuevo">＋ Nuevo</button>
+        </div>
+        <div class="admin-layout">
+          <div class="lista-panel">
+            <div class="buscar"><input id="cliBuscar" placeholder="🔍 Buscar..."></div>
+            <div class="lista-items" id="cliLista"></div>
+          </div>
+          <div class="form-panel">
+            <h2 id="cliTitulo">Nuevo cliente</h2>
+            <div class="campo"><label>Nombre</label><input id="cliNombre"></div>
+            <div class="campo"><label>NIF</label><input id="cliNif"></div>
+            <div class="campo"><label>Teléfono</label><input id="cliTel"></div>
+            <div class="campo"><label>Email</label><input id="cliEmail"></div>
+            <div class="campo"><label>Dirección</label><input id="cliDir"></div>
+            <div class="form-acciones">
+              <button class="btn verde" id="cliGuardar">💾 Guardar</button>
+              <button class="btn rojo" id="cliBorrar">🗑️ Eliminar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PRODUCTOS ===== -->
+      <div class="vista" id="vProductos">
+        <div class="toolbar">
+          <b style="color:#2d4a73">Productos</b><span style="flex:1"></span>
+          <button class="btn verde" id="prodNuevo">＋ Nuevo</button>
+        </div>
+        <div class="admin-layout">
+          <div class="lista-panel">
+            <div class="buscar"><input id="prodBuscar" placeholder="🔍 Nombre o código..."></div>
+            <div class="lista-items" id="prodLista"></div>
+          </div>
+          <div class="form-panel">
+            <h2 id="prodTitulo">Nuevo producto</h2>
+            <div class="campo"><label>Referencia</label><input id="prodRef" style="max-width:120px"></div>
+            <div class="campo"><label>Nombre</label><input id="prodNombre"></div>
+            <div class="campo"><label>Código de barras</label><input id="prodBarcode"></div>
+            <div class="campo"><label>Precio de compra</label><input id="prodCompra" type="number" step="0.01" min="0" style="max-width:120px"> €</div>
+            <div class="campo"><label>Precio de venta</label><input id="prodVenta" type="number" step="0.01" min="0" style="max-width:120px"> € (IVA incluido)</div>
+            <div class="campo"><label>IVA</label>
+              <select id="prodIva" style="max-width:140px">
+                <option value="21">General 21%</option>
+                <option value="10">Reducido 10%</option>
+                <option value="4">Superreducido 4%</option>
+                <option value="0">Exento 0%</option>
+              </select>
+            </div>
+            <div class="campo"><label>Categoría</label><select id="prodCat"></select></div>
+            <div class="campo"><label>Icono (emoji)</label><input id="prodEmoji" style="max-width:80px;font-size:20px;text-align:center" maxlength="4"></div>
+            <div class="form-acciones">
+              <button class="btn verde" id="prodGuardar">💾 Guardar</button>
+              <button class="btn rojo" id="prodBorrar">🗑️ Eliminar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CATEGORÍAS ===== -->
+      <div class="vista" id="vCategorias">
+        <div class="toolbar">
+          <b style="color:#2d4a73">Categorías</b><span style="flex:1"></span>
+          <button class="btn verde" id="catNuevo">＋ Nueva</button>
+        </div>
+        <div class="admin-layout">
+          <div class="lista-panel">
+            <div class="lista-items" id="catLista"></div>
+          </div>
+          <div class="form-panel">
+            <h2 id="catTitulo">Nueva categoría</h2>
+            <div class="campo"><label>Nombre</label><input id="catNombre"></div>
+            <div class="campo"><label>Icono (emoji)</label><input id="catEmoji" style="max-width:80px;font-size:20px;text-align:center" maxlength="4"></div>
+            <div class="form-acciones">
+              <button class="btn verde" id="catGuardar">💾 Guardar</button>
+              <button class="btn rojo" id="catBorrar">🗑️ Eliminar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== USUARIOS ===== -->
+      <div class="vista" id="vUsuarios">
+        <div class="toolbar">
+          <b style="color:#2d4a73">Usuarios</b><span style="flex:1"></span>
+          <button class="btn verde" id="usrNuevo">＋ Nuevo</button>
+        </div>
+        <div class="admin-layout">
+          <div class="lista-panel">
+            <div class="lista-items" id="usrLista"></div>
+          </div>
+          <div class="form-panel">
+            <h2 id="usrTitulo">Nuevo usuario</h2>
+            <div class="campo"><label>Nombre</label><input id="usrNombre"></div>
+            <div class="campo"><label>Rol</label>
+              <select id="usrRol" style="max-width:180px">
+                <option value="admin">Administrador</option>
+                <option value="camarero">Camarero</option>
+              </select>
+            </div>
+            <div class="campo"><label>Icono (emoji)</label><input id="usrEmoji" style="max-width:80px;font-size:20px;text-align:center" maxlength="4"></div>
+            <div class="campo"><label>Contraseña (PIN)</label><input id="usrPin" type="text" inputmode="numeric" style="max-width:140px" placeholder="(vacío = sin PIN)"></div>
+            <div style="font-size:12px;color:#888;margin:-4px 0 12px 140px">Deje la contraseña vacía para entrar sin PIN. Los administradores ven los menús de administración.</div>
+            <div class="form-acciones">
+              <button class="btn verde" id="usrGuardar">💾 Guardar</button>
+              <button class="btn rojo" id="usrBorrar">🗑️ Eliminar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CONFIGURACIÓN ===== -->
+      <div class="vista" id="vConfig">
+        <div class="toolbar"><b style="color:#2d4a73">Configuración</b></div>
+        <div class="form-panel">
+          <h2>Datos del negocio (ticket)</h2>
+          <div class="campo"><label>Nombre</label><input id="cfgNombre"></div>
+          <div class="campo"><label>Dirección</label><input id="cfgDir"></div>
+          <div class="campo"><label>NIF</label><input id="cfgNif"></div>
+          <div class="campo"><label>Pie de ticket</label><input id="cfgPie"></div>
+          <div class="campo"><label>Número de mesas</label><input id="cfgMesas" type="number" min="0" max="50" style="max-width:90px"></div>
+          <div class="form-acciones">
+            <button class="btn verde" id="cfgGuardar">💾 Guardar</button>
+          </div>
+          <h2 style="margin-top:28px">Datos</h2>
+          <div class="form-acciones">
+            <button class="btn azul" id="cfgExportar">⬇ Exportar copia (JSON)</button>
+            <button class="btn" id="cfgImportar">⬆ Importar copia</button>
+            <button class="btn rojo" id="cfgReset">⚠ Borrar todos los datos</button>
+            <input type="file" id="cfgFichero" accept=".json" style="display:none">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="statusbar">
+    <span class="chip" id="sbCaja">Caja: General</span>
+    <button class="chip" id="sbMesas">🍽️ Mesas</button>
+    <span class="chip" id="sbUsuario">—</span>
+  </div>
+</div>
+
+<!-- ============ MODALES ============ -->
+<div id="overlay">
+  <!-- Pago -->
+  <div class="modal" id="modalPago" style="display:none">
+    <h2>Pago <button data-cerrar>✕</button></h2>
+    <div class="cuerpo">
+      <div id="pagoTotal">0,00 €</div>
+      <div id="pagoMetodos">
+        <button data-metodo="Efectivo" class="sel"><span style="font-size:22px">💵</span>Efectivo</button>
+        <button data-metodo="Tarjeta"><span style="font-size:22px">💳</span>Tarjeta</button>
+      </div>
+      <div id="pagoEntregado"><label>Entregado:</label><input id="pagoInput" type="number" step="0.01" min="0"> €</div>
+      <div id="pagoRapido"></div>
+      <div id="pagoCambio">Cambio: <b id="pagoCambioVal">0,00 €</b></div>
+    </div>
+    <div class="pie">
+      <button class="btn" data-cerrar>Cancelar</button>
+      <button class="btn verde" id="btnConfirmarPago">✔ Aceptar</button>
+    </div>
+  </div>
+
+  <!-- Recibo -->
+  <div class="modal" id="modalRecibo" style="display:none">
+    <h2>Ticket <button data-cerrar>✕</button></h2>
+    <div class="cuerpo"><div id="recibo"></div></div>
+    <div class="pie">
+      <button class="btn rojo" id="btnAnularTicket" style="display:none">🗑️ Anular ticket</button>
+      <button class="btn azul" id="btnImprimir">🖨️ Imprimir</button>
+      <button class="btn verde" data-cerrar>Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Selector de cliente -->
+  <div class="modal" id="modalCliente" style="display:none">
+    <h2>Seleccionar cliente <button data-cerrar>✕</button></h2>
+    <div class="cuerpo">
+      <input id="selCliBuscar" placeholder="🔍 Buscar..." style="width:100%;margin-bottom:10px">
+      <div class="lista-items" id="selCliLista" style="max-height:300px;overflow-y:auto;border:1px solid var(--gris)"></div>
+    </div>
+    <div class="pie">
+      <button class="btn" id="btnSinCliente">Sin cliente</button>
+      <button class="btn" data-cerrar>Cancelar</button>
+    </div>
+  </div>
+
+  <!-- PIN -->
+  <div class="modal" id="modalPin" style="display:none;max-width:300px">
+    <h2>Contraseña <button data-cerrar>✕</button></h2>
+    <div class="cuerpo" style="text-align:center">
+      <p id="pinUsuario" style="margin-bottom:10px;font-weight:bold"></p>
+      <input id="pinInput" type="password" inputmode="numeric" style="font-size:24px;text-align:center;width:160px" maxlength="8">
+    </div>
+    <div class="pie">
+      <button class="btn" data-cerrar>Cancelar</button>
+      <button class="btn verde" id="btnPinOk">✔ Entrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* =========================================================
+   TPV en un solo archivo — base de datos en localStorage
+   ========================================================= */
+const DB_KEY = "tpv_db_v1";
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const eur = n => (Math.round(n*100)/100).toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
+const r2  = n => Math.round(n*100)/100;
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+/* ---------- Datos iniciales ---------- */
+function datosIniciales(){
+  const cats = [
+    {"id": "cafes", "nombre": "CAFES", "emoji": "☕"},
+    {"id": "cervezas", "nombre": "CERVEZAS", "emoji": "🍺"},
+    {"id": "refrescos", "nombre": "REFRESCOS", "emoji": "🥤"},
+    {"id": "hamburguesas", "nombre": "HAMBURGUESAS", "emoji": "🍔"},
+    {"id": "bocadillos", "nombre": "BOCADILLOS", "emoji": "🥪"},
+    {"id": "sandwich", "nombre": "SANDWICH", "emoji": "🥪"},
+    {"id": "frankfurts", "nombre": "FRANKFURTS", "emoji": "🌭"},
+    {"id": "raciones", "nombre": "RACIONES", "emoji": "🍤"},
+    {"id": "combinados", "nombre": "PLATOS COMBINADOS", "emoji": "🍽️"},
+    {"id": "copas", "nombre": "COPAS", "emoji": "🥃"},
+    {"id": "copas_hielo", "nombre": "COPAS CON HIELO", "emoji": "🧊"},
+    {"id": "cubatas", "nombre": "CUBATAS", "emoji": "🍸"},
+    {"id": "chupitos", "nombre": "CHUPITOS", "emoji": "🥂"},
+    {"id": "varios", "nombre": "VARIOS", "emoji": "🛒"},
+  ];
+  const productos = [
+    {"id": "p9901", "ref": "9901", "nombre": "CAFE SOLO", "barcode": "9901", "compra": 1.1, "precio": 1.1, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9902", "ref": "9902", "nombre": "CAFE SOLO DESCAFEINADO", "barcode": "9902", "compra": 1.1, "precio": 1.1, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9903", "ref": "9903", "nombre": "CAFE SOLO DESCAFEINADO SACARINA", "barcode": "9903", "compra": 1.1, "precio": 1.1, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9904", "ref": "9904", "nombre": "CAFE CON HIELO", "barcode": "9904", "compra": 1.2, "precio": 1.2, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9905", "ref": "9905", "nombre": "CAFE CON HIELO DESCAFEINADO", "barcode": "9905", "compra": 1.2, "precio": 1.2, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9906", "ref": "9906", "nombre": "CAFE CON HIELO SACARINA", "barcode": "9906", "compra": 1.2, "precio": 1.2, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9907", "ref": "9907", "nombre": "CORTADO", "barcode": "9907", "compra": 1.2, "precio": 1.2, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9908", "ref": "9908", "nombre": "CORTADO DESCAFEINADO SOBRE", "barcode": "9908", "compra": 1.2, "precio": 1.2, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9909", "ref": "9909", "nombre": "CORTADO DESCAFEINADO MAQUINA", "barcode": "9909", "compra": 1.2, "precio": 1.2, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9910", "ref": "9910", "nombre": "CORTADO DESCAFEINADO SACARINA", "barcode": "9910", "compra": 1.2, "precio": 1.2, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9911", "ref": "9911", "nombre": "CORTADO CON HIELO", "barcode": "9911", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9912", "ref": "9912", "nombre": "CORTADO CON HIELO DESCAFEINADO", "barcode": "9912", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9913", "ref": "9913", "nombre": "CORTADO CON HIELO SACARINA", "barcode": "9913", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9914", "ref": "9914", "nombre": "CARAJILLO COÑAC", "barcode": "9914", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9915", "ref": "9915", "nombre": "CARAJILLO WHISKY", "barcode": "9915", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9916", "ref": "9916", "nombre": "CARAJILLO BAILEYS", "barcode": "9916", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9917", "ref": "9917", "nombre": "CARAJILLO ANIS", "barcode": "9917", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9918", "ref": "9918", "nombre": "CARAJILLO MARIA", "barcode": "9918", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9919", "ref": "9919", "nombre": "CARAJILLO RON", "barcode": "9919", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9920", "ref": "9920", "nombre": "VASO DE LECHE", "barcode": "9920", "compra": 1.1, "precio": 1.1, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9921", "ref": "9921", "nombre": "BOMBOM", "barcode": "9921", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9922", "ref": "9922", "nombre": "TE", "barcode": "9922", "compra": 1.0, "precio": 1.0, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9923", "ref": "9923", "nombre": "MANZANILLA", "barcode": "9923", "compra": 1.0, "precio": 1.0, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9924", "ref": "9924", "nombre": "POLEO MENTA", "barcode": "9924", "compra": 1.0, "precio": 1.0, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9925", "ref": "9925", "nombre": "TILA", "barcode": "9925", "compra": 1.0, "precio": 1.0, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9926", "ref": "9926", "nombre": "CAFE AMERICANO", "barcode": "9926", "compra": 1.1, "precio": 1.1, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9927", "ref": "9927", "nombre": "CAFE CON LECHE", "barcode": "9927", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9928", "ref": "9928", "nombre": "CAFE CON LECHE DESCAFEINADO DE SOBRE", "barcode": "9928", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9929", "ref": "9929", "nombre": "CAFE CON LECHE DESCAFEINADO DE MAQUINA", "barcode": "9929", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9930", "ref": "9930", "nombre": "CAFE CON LECHE CON HIELO", "barcode": "9930", "compra": 1.4, "precio": 1.4, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9931", "ref": "9931", "nombre": "CAFE CON LECHE CON HIELO DESCAFEINADO DE MAQUINA", "barcode": "9931", "compra": 1.4, "precio": 1.4, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9932", "ref": "9932", "nombre": "CAFE CON LECHE CON HIELO DESCAFEINADO DE SOBRE", "barcode": "9932", "compra": 1.4, "precio": 1.4, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9933", "ref": "9933", "nombre": "TRIFASICO BAILEYS", "barcode": "9933", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9934", "ref": "9934", "nombre": "TRIFASICO WHISKY", "barcode": "9934", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9935", "ref": "9935", "nombre": "TRIFASICO COÑAC", "barcode": "9935", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9936", "ref": "9936", "nombre": "TRIFASICO RON", "barcode": "9936", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9937", "ref": "9937", "nombre": "CARAJILLO ORUJO", "barcode": "9937", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9938", "ref": "9938", "nombre": "TRIFASICO ORUJO", "barcode": "9938", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cafes", "emoji": "☕"},
+    {"id": "p9801", "ref": "9801", "nombre": "QUINTO", "barcode": "9801", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9802", "ref": "9802", "nombre": "CAÑA", "barcode": "9802", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9803", "ref": "9803", "nombre": "QUINTO SIN", "barcode": "9803", "compra": 1.4, "precio": 1.4, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9804", "ref": "9804", "nombre": "MEDIANA", "barcode": "9804", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9805", "ref": "9805", "nombre": "DESPERADO", "barcode": "9805", "compra": 2.3, "precio": 2.3, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9806", "ref": "9806", "nombre": "COPA DE CERVEZA", "barcode": "9806", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9807", "ref": "9807", "nombre": "CLARA EN COPA", "barcode": "9807", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9808", "ref": "9808", "nombre": "CLARA EN TUBO", "barcode": "9808", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9809", "ref": "9809", "nombre": "CLARA EN CAÑA", "barcode": "9809", "compra": 1.4, "precio": 1.4, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9810", "ref": "9810", "nombre": "TUBO CERVEZA", "barcode": "9810", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9811", "ref": "9811", "nombre": "VOLL DAMM", "barcode": "9811", "compra": 1.9, "precio": 1.9, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9812", "ref": "9812", "nombre": "CORONITA", "barcode": "9812", "compra": 2.3, "precio": 2.3, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9813", "ref": "9813", "nombre": "LATA CERVEZA", "barcode": "9813", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9814", "ref": "9814", "nombre": "JARRA 1/2", "barcode": "9814", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9815", "ref": "9815", "nombre": "CLARA 1/2", "barcode": "9815", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9816", "ref": "9816", "nombre": "MEDIANA SIN", "barcode": "9816", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9817", "ref": "9817", "nombre": "CLARA SIN", "barcode": "9817", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9818", "ref": "9818", "nombre": "1906", "barcode": "9818", "compra": 2.2, "precio": 2.2, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9819", "ref": "9819", "nombre": "CERVEZA ESPECIAL 1", "barcode": "9819", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9820", "ref": "9820", "nombre": "CERVEZA ESPECIAL 2", "barcode": "9820", "compra": 2.8, "precio": 2.8, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9821", "ref": "9821", "nombre": "CERVEZA ESPECIAL 3", "barcode": "9821", "compra": 3.0, "precio": 3.0, "iva": 10, "cat": "cervezas", "emoji": "🍺"},
+    {"id": "p9601", "ref": "9601", "nombre": "COCA COLA", "barcode": "9601", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9602", "ref": "9602", "nombre": "COCA COLA LIGHT", "barcode": "9602", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9603", "ref": "9603", "nombre": "COCA COLA ZERO", "barcode": "9603", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9604", "ref": "9604", "nombre": "KAS LIMON", "barcode": "9604", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9605", "ref": "9605", "nombre": "KAS NARANJA", "barcode": "9605", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9606", "ref": "9606", "nombre": "7UP", "barcode": "9606", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9607", "ref": "9607", "nombre": "AGUA", "barcode": "9607", "compra": 1.0, "precio": 1.0, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9608", "ref": "9608", "nombre": "TRINA", "barcode": "9608", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9609", "ref": "9609", "nombre": "HORCHATA", "barcode": "9609", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9610", "ref": "9610", "nombre": "VICHY", "barcode": "9610", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9611", "ref": "9611", "nombre": "NESTEA", "barcode": "9611", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9612", "ref": "9612", "nombre": "GINGER ALE", "barcode": "9612", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9613", "ref": "9613", "nombre": "BITTER KAS", "barcode": "9613", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9614", "ref": "9614", "nombre": "RED BULL", "barcode": "9614", "compra": 2.0, "precio": 2.0, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9615", "ref": "9615", "nombre": "TONICA", "barcode": "9615", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9616", "ref": "9616", "nombre": "ZUMO DE PIÑA", "barcode": "9616", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9617", "ref": "9617", "nombre": "ZUMO DE NARANJA", "barcode": "9617", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9618", "ref": "9618", "nombre": "ZUMO DE MELOCOTON", "barcode": "9618", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9619", "ref": "9619", "nombre": "CACAOLAT", "barcode": "9619", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9620", "ref": "9620", "nombre": "AQUARIUS", "barcode": "9620", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9621", "ref": "9621", "nombre": "VASO DE VINO", "barcode": "9621", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9622", "ref": "9622", "nombre": "VINO ESPECIAL", "barcode": "9622", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9623", "ref": "9623", "nombre": "FAUSTINO", "barcode": "9623", "compra": 2.0, "precio": 2.0, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9624", "ref": "9624", "nombre": "BOTELLA DE VINO", "barcode": "9624", "compra": 6.0, "precio": 6.0, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9625", "ref": "9625", "nombre": "BOTELLA DE VINO ESPECIAL", "barcode": "9625", "compra": 14.0, "precio": 14.0, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p9626", "ref": "9626", "nombre": "GAZPACHO", "barcode": "9626", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "refrescos", "emoji": "🥤"},
+    {"id": "p7701", "ref": "7701", "nombre": "Nº1", "barcode": "7701", "compra": 3.4, "precio": 3.4, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7702", "ref": "7702", "nombre": "Nº2", "barcode": "7702", "compra": 3.4, "precio": 3.4, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7703", "ref": "7703", "nombre": "Nº3", "barcode": "7703", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7704", "ref": "7704", "nombre": "Nº4", "barcode": "7704", "compra": 3.7, "precio": 3.7, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7705", "ref": "7705", "nombre": "Nº5", "barcode": "7705", "compra": 3.6, "precio": 3.6, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7706", "ref": "7706", "nombre": "Nº6", "barcode": "7706", "compra": 4.0, "precio": 4.0, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7707", "ref": "7707", "nombre": "Nº7", "barcode": "7707", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7708", "ref": "7708", "nombre": "Nº8", "barcode": "7708", "compra": 4.6, "precio": 4.6, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7709", "ref": "7709", "nombre": "Nº9", "barcode": "7709", "compra": 4.3, "precio": 4.3, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7710", "ref": "7710", "nombre": "Nº10", "barcode": "7710", "compra": 6.5, "precio": 6.5, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7711", "ref": "7711", "nombre": "Nº11", "barcode": "7711", "compra": 6.6, "precio": 6.6, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7715", "ref": "7715", "nombre": "Nº15", "barcode": "7715", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7716", "ref": "7716", "nombre": "Nº16", "barcode": "7716", "compra": 7.0, "precio": 7.0, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7717", "ref": "7717", "nombre": "Nº17", "barcode": "7717", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7718", "ref": "7718", "nombre": "Nº18", "barcode": "7718", "compra": 5.6, "precio": 5.6, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7719", "ref": "7719", "nombre": "Nº19", "barcode": "7719", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7720", "ref": "7720", "nombre": "Nº20", "barcode": "7720", "compra": 4.3, "precio": 4.3, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7721", "ref": "7721", "nombre": "Nº21", "barcode": "7721", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7722", "ref": "7722", "nombre": "Nº22", "barcode": "7722", "compra": 5.7, "precio": 5.7, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7723", "ref": "7723", "nombre": "Nº23", "barcode": "7723", "compra": 6.5, "precio": 6.5, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7724", "ref": "7724", "nombre": "HAMBURGUESA VEGANA", "barcode": "7724", "compra": 7.0, "precio": 7.0, "iva": 10, "cat": "hamburguesas", "emoji": "🍔"},
+    {"id": "p7730", "ref": "7730", "nombre": "BOCADILLO JAMON SERRANO", "barcode": "7730", "compra": 3.0, "precio": 3.0, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7731", "ref": "7731", "nombre": "BOCADILLO QUESO", "barcode": "7731", "compra": 3.0, "precio": 3.0, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7732", "ref": "7732", "nombre": "BOCADILLO ATUN", "barcode": "7732", "compra": 3.0, "precio": 3.0, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7733", "ref": "7733", "nombre": "BOCADILLO FUET", "barcode": "7733", "compra": 2.8, "precio": 2.8, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7734", "ref": "7734", "nombre": "BOCADILLO ATUN, ANCHOAS Y OLIVAS", "barcode": "7734", "compra": 3.6, "precio": 3.6, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7735", "ref": "7735", "nombre": "BOCADILLO CHORIZO", "barcode": "7735", "compra": 3.2, "precio": 3.2, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7736", "ref": "7736", "nombre": "BOCADILLO LOMO EMBUCHADO", "barcode": "7736", "compra": 3.3, "precio": 3.3, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7737", "ref": "7737", "nombre": "BOCADILLO ANCHOAS", "barcode": "7737", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7738", "ref": "7738", "nombre": "BOCADILLO ATUN, OLIVAS Y MAHONESA", "barcode": "7738", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7750", "ref": "7750", "nombre": "BOCADILLO BACON", "barcode": "7750", "compra": 3.0, "precio": 3.0, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7751", "ref": "7751", "nombre": "BOCADILLO BACON QUESO", "barcode": "7751", "compra": 3.3, "precio": 3.3, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7752", "ref": "7752", "nombre": "BOCADILLO LOMO", "barcode": "7752", "compra": 3.1, "precio": 3.1, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7753", "ref": "7753", "nombre": "BOCADILLO LOMO QUESO", "barcode": "7753", "compra": 3.4, "precio": 3.4, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7754", "ref": "7754", "nombre": "BOCADILLO TORTILLA DE PATATA", "barcode": "7754", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7755", "ref": "7755", "nombre": "BOCADILLO TORTILLA AL GUSTO", "barcode": "7755", "compra": 3.8, "precio": 3.8, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7756", "ref": "7756", "nombre": "BOCADILLO SALCHICHAS DEL PAIS", "barcode": "7756", "compra": 3.6, "precio": 3.6, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7757", "ref": "7757", "nombre": "BOCADILLO BUTIFARRA CON ALIOLI", "barcode": "7757", "compra": 4.3, "precio": 4.3, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7759", "ref": "7759", "nombre": "BOCADILLO LOMO BACON QUESO", "barcode": "7759", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7760", "ref": "7760", "nombre": "BOCADILLO CALAMARES CON MAHONESA", "barcode": "7760", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7761", "ref": "7761", "nombre": "BOCADILLO BISTEC", "barcode": "7761", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7762", "ref": "7762", "nombre": "BOCADILLO SOBRASADA", "barcode": "7762", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7764", "ref": "7764", "nombre": "BOCADILLO LOMO, PIMIENTO Y QUESO", "barcode": "7764", "compra": 4.0, "precio": 4.0, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7765", "ref": "7765", "nombre": "BOCADILLO PECHUGA DE POLLO", "barcode": "7765", "compra": 3.1, "precio": 3.1, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7766", "ref": "7766", "nombre": "BOCADILLO PECHUGA DE POLLO CON QUESO", "barcode": "7766", "compra": 3.4, "precio": 3.4, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7767", "ref": "7767", "nombre": "BOCADILLO PECHUGA DE POLLO CON BACON Y HUEVO", "barcode": "7767", "compra": 4.6, "precio": 4.6, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7768", "ref": "7768", "nombre": "BOCADILLO JAMON SERRANO, LOMO Y PIMIENTO", "barcode": "7768", "compra": 4.8, "precio": 4.8, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7769", "ref": "7769", "nombre": "BOCADILLO PINCHOS", "barcode": "7769", "compra": 4.3, "precio": 4.3, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7770", "ref": "7770", "nombre": "BOCADILLO PECHUGA DE POLLO CON BACON Y ROQUEFORT", "barcode": "7770", "compra": 4.8, "precio": 4.8, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7771", "ref": "7771", "nombre": "VEGETAL DE POLLO CON LECHUGA, QUESO, TOMATE Y MAHONESA", "barcode": "7771", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "bocadillos", "emoji": "🥪"},
+    {"id": "p7780", "ref": "7780", "nombre": "SANDWICH BIKINI", "barcode": "7780", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "sandwich", "emoji": "🥪"},
+    {"id": "p7782", "ref": "7782", "nombre": "SANDWICH MALLORQUIN", "barcode": "7782", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "sandwich", "emoji": "🥪"},
+    {"id": "p7783", "ref": "7783", "nombre": "SANDWICH VEGETAL", "barcode": "7783", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "sandwich", "emoji": "🥪"},
+    {"id": "p7784", "ref": "7784", "nombre": "BIKINI DE LA CASA (JAMON DULCE, QUESO, LOMO, BACON Y HUEVO)", "barcode": "7784", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "sandwich", "emoji": "🥪"},
+    {"id": "p7800", "ref": "7800", "nombre": "FRANKFURT", "barcode": "7800", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "frankfurts", "emoji": "🌭"},
+    {"id": "p7801", "ref": "7801", "nombre": "FRANKFURT CON CEBOLLA", "barcode": "7801", "compra": 3.6, "precio": 3.6, "iva": 10, "cat": "frankfurts", "emoji": "🌭"},
+    {"id": "p7802", "ref": "7802", "nombre": "FRANKFURT CON CEBOLLA CARAMELIZADA", "barcode": "7802", "compra": 4.0, "precio": 4.0, "iva": 10, "cat": "frankfurts", "emoji": "🌭"},
+    {"id": "p7803", "ref": "7803", "nombre": "FRANKFURT CON BACON, QUESO Y PIMIENTO", "barcode": "7803", "compra": 4.2, "precio": 4.2, "iva": 10, "cat": "frankfurts", "emoji": "🌭"},
+    {"id": "p7804", "ref": "7804", "nombre": "CERVELA", "barcode": "7804", "compra": 3.8, "precio": 3.8, "iva": 10, "cat": "frankfurts", "emoji": "🌭"},
+    {"id": "p7805", "ref": "7805", "nombre": "PIKANTWURST", "barcode": "7805", "compra": 3.7, "precio": 3.7, "iva": 10, "cat": "frankfurts", "emoji": "🌭"},
+    {"id": "p7810", "ref": "7810", "nombre": "RACION DE MORROS FRITOS", "barcode": "7810", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7811", "ref": "7811", "nombre": "RACION DE CALLOS A LA MADRILEÑA", "barcode": "7811", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7812", "ref": "7812", "nombre": "RACION DE QUESO PROVOLONE", "barcode": "7812", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7813", "ref": "7813", "nombre": "RACION DE CHAMPIÑONES A LA PLANCHA", "barcode": "7813", "compra": 4.0, "precio": 4.0, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7814", "ref": "7814", "nombre": "RACION DE JAMON DULCE PICANTE", "barcode": "7814", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7815", "ref": "7815", "nombre": "RACION DE MONTADITOS DE LOMO", "barcode": "7815", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7816", "ref": "7816", "nombre": "RACION DE CALAMARES A LA ROMANA", "barcode": "7816", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7817", "ref": "7817", "nombre": "RACION DE CHOCOS", "barcode": "7817", "compra": 6.0, "precio": 6.0, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7818", "ref": "7818", "nombre": "RACION DE CROQUETAS DE COCIDO", "barcode": "7818", "compra": 6.5, "precio": 6.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7819", "ref": "7819", "nombre": "RACION DE TALLARINAS", "barcode": "7819", "compra": 9.0, "precio": 9.0, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7820", "ref": "7820", "nombre": "RACION DE PINCHOS", "barcode": "7820", "compra": 6.5, "precio": 6.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7821", "ref": "7821", "nombre": "RACION DE PATATAS FRITAS NATURALES (DE LA CASA)", "barcode": "7821", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7822", "ref": "7822", "nombre": "RACION DE PATATAS DELUXE", "barcode": "7822", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7823", "ref": "7823", "nombre": "RACION DE NUGGETS", "barcode": "7823", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7824", "ref": "7824", "nombre": "RACION DE ALITAS DE POLLO", "barcode": "7824", "compra": 6.5, "precio": 6.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7825", "ref": "7825", "nombre": "RACION DE BOMBAS", "barcode": "7825", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7826", "ref": "7826", "nombre": "SURTIDO DE PATES", "barcode": "7826", "compra": 6.0, "precio": 6.0, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7827", "ref": "7827", "nombre": "SURTIDO DE QUESOS", "barcode": "7827", "compra": 6.5, "precio": 6.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7828", "ref": "7828", "nombre": "RACION DE BUÑUELOS DE BACALAO", "barcode": "7828", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7835", "ref": "7835", "nombre": "RACION OLIVAS RELLENAS", "barcode": "7835", "compra": 2.0, "precio": 2.0, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7836", "ref": "7836", "nombre": "RACION ENSALADILLA RUSA", "barcode": "7836", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7837", "ref": "7837", "nombre": "RACION QUESO", "barcode": "7837", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7838", "ref": "7838", "nombre": "RACION JAMON SERRANO", "barcode": "7838", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7839", "ref": "7839", "nombre": "RACION ANCHOAS PAN CON TOMATE", "barcode": "7839", "compra": 6.0, "precio": 6.0, "iva": 10, "cat": "raciones", "emoji": "🍤"},
+    {"id": "p7845", "ref": "7845", "nombre": "ENSALADA MIXTA", "barcode": "7845", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "combinados", "emoji": "🍽️"},
+    {"id": "p7846", "ref": "7846", "nombre": "ENSALADA DE QUESO DE CABRA", "barcode": "7846", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "combinados", "emoji": "🍽️"},
+    {"id": "p7847", "ref": "7847", "nombre": "ENSALADA DE MOZZARELLA Y TOMATE", "barcode": "7847", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "combinados", "emoji": "🍽️"},
+    {"id": "p7848", "ref": "7848", "nombre": "CHULETON DE TERNERA CON GUARNICION", "barcode": "7848", "compra": 12.0, "precio": 12.0, "iva": 10, "cat": "combinados", "emoji": "🍽️"},
+    {"id": "p7849", "ref": "7849", "nombre": "SEPIA A LA PLANCHA CON ENSALADA", "barcode": "7849", "compra": 7.5, "precio": 7.5, "iva": 10, "cat": "combinados", "emoji": "🍽️"},
+    {"id": "p7850", "ref": "7850", "nombre": "BUTIFARRA CON ALUBIAS", "barcode": "7850", "compra": 6.0, "precio": 6.0, "iva": 10, "cat": "combinados", "emoji": "🍽️"},
+    {"id": "p7851", "ref": "7851", "nombre": "BISTEC CON PATATAS", "barcode": "7851", "compra": 6.5, "precio": 6.5, "iva": 10, "cat": "combinados", "emoji": "🍽️"},
+    {"id": "p9501", "ref": "9501", "nombre": "COPA BALLANTINES", "barcode": "9501", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9502", "ref": "9502", "nombre": "COPA CARDHU", "barcode": "9502", "compra": 3.0, "precio": 3.0, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9503", "ref": "9503", "nombre": "COPA CARDHU BLACK", "barcode": "9503", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9504", "ref": "9504", "nombre": "COPA CUTTY SARK", "barcode": "9504", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9505", "ref": "9505", "nombre": "COPA FOUR ROSES", "barcode": "9505", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9506", "ref": "9506", "nombre": "COPA GLENROTHERS", "barcode": "9506", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9507", "ref": "9507", "nombre": "COPA JACK DANIELS", "barcode": "9507", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9508", "ref": "9508", "nombre": "COPA JB", "barcode": "9508", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9509", "ref": "9509", "nombre": "COPA JONY RED", "barcode": "9509", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9510", "ref": "9510", "nombre": "COPA JONY BLACK", "barcode": "9510", "compra": 3.2, "precio": 3.2, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9511", "ref": "9511", "nombre": "COPA JONY GREEN", "barcode": "9511", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9512", "ref": "9512", "nombre": "COPA JONY GOLD", "barcode": "9512", "compra": 8.0, "precio": 8.0, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9513", "ref": "9513", "nombre": "COPA JONY BLUE", "barcode": "9513", "compra": 22.0, "precio": 22.0, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9514", "ref": "9514", "nombre": "COPA MACALLAN", "barcode": "9514", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9515", "ref": "9515", "nombre": "COPA PASSPORT", "barcode": "9515", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9520", "ref": "9520", "nombre": "COPA ANIS", "barcode": "9520", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9521", "ref": "9521", "nombre": "COPA BAILEYS", "barcode": "9521", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9522", "ref": "9522", "nombre": "COPA COINTREAU", "barcode": "9522", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9523", "ref": "9523", "nombre": "COPA CREMA RON BARCELO", "barcode": "9523", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9524", "ref": "9524", "nombre": "COPA DOOLEYS", "barcode": "9524", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9525", "ref": "9525", "nombre": "COPA FRANGELICO", "barcode": "9525", "compra": 2.0, "precio": 2.0, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9526", "ref": "9526", "nombre": "COPA GROSELLA", "barcode": "9526", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9527", "ref": "9527", "nombre": "COPA KIWI", "barcode": "9527", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9528", "ref": "9528", "nombre": "COPA LICOR MANZANA", "barcode": "9528", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9529", "ref": "9529", "nombre": "COPA LICOR MELOCOTON", "barcode": "9529", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9530", "ref": "9530", "nombre": "COPA LIMA", "barcode": "9530", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9531", "ref": "9531", "nombre": "COPA MANGAROCA", "barcode": "9531", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9532", "ref": "9532", "nombre": "COPA MARIA BRIZARD", "barcode": "9532", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9533", "ref": "9533", "nombre": "COPA MELODY", "barcode": "9533", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9534", "ref": "9534", "nombre": "COPA MENTA", "barcode": "9534", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9535", "ref": "9535", "nombre": "COPA MOSCATELL", "barcode": "9535", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9536", "ref": "9536", "nombre": "COPA PACHARAN", "barcode": "9536", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9537", "ref": "9537", "nombre": "COPA PONCHE", "barcode": "9537", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9538", "ref": "9538", "nombre": "COPA WHISKY PECHE", "barcode": "9538", "compra": 2.0, "precio": 2.0, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9545", "ref": "9545", "nombre": "COPA CARLOS III", "barcode": "9545", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9546", "ref": "9546", "nombre": "COPA CAZALLA", "barcode": "9546", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9547", "ref": "9547", "nombre": "COPA CONDE DE OSBORNE", "barcode": "9547", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9548", "ref": "9548", "nombre": "COPA COÑAC 103", "barcode": "9548", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9549", "ref": "9549", "nombre": "COPA GRAN DUQUE DE ALBA", "barcode": "9549", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9550", "ref": "9550", "nombre": "COPA INDEPENDENCIA", "barcode": "9550", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9551", "ref": "9551", "nombre": "COPA LA GUITA", "barcode": "9551", "compra": 1.3, "precio": 1.3, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9552", "ref": "9552", "nombre": "COPA MAGNO", "barcode": "9552", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9553", "ref": "9553", "nombre": "COPA MASCARO", "barcode": "9553", "compra": 2.0, "precio": 2.0, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9554", "ref": "9554", "nombre": "COPA RON PUJOL", "barcode": "9554", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9555", "ref": "9555", "nombre": "COPA SOBERANO", "barcode": "9555", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9556", "ref": "9556", "nombre": "COPA TERRY", "barcode": "9556", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9557", "ref": "9557", "nombre": "COPA VETERANO", "barcode": "9557", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9558", "ref": "9558", "nombre": "COPA ZACAPA 23", "barcode": "9558", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "copas", "emoji": "🥃"},
+    {"id": "p9565", "ref": "9565", "nombre": "COPA BALLANTINES", "barcode": "9565", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9566", "ref": "9566", "nombre": "COPA CARDHU", "barcode": "9566", "compra": 3.2, "precio": 3.2, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9567", "ref": "9567", "nombre": "COPA CARDHU BLACK", "barcode": "9567", "compra": 3.7, "precio": 3.7, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9568", "ref": "9568", "nombre": "COPA CUTTY SARK", "barcode": "9568", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9569", "ref": "9569", "nombre": "COPA FOUR ROSES", "barcode": "9569", "compra": 2.6, "precio": 2.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9570", "ref": "9570", "nombre": "COPA GLENROTHERS", "barcode": "9570", "compra": 3.7, "precio": 3.7, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9571", "ref": "9571", "nombre": "COPA JACK DANIELS", "barcode": "9571", "compra": 2.6, "precio": 2.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9572", "ref": "9572", "nombre": "COPA JB", "barcode": "9572", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9573", "ref": "9573", "nombre": "COPA JONY RED", "barcode": "9573", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9574", "ref": "9574", "nombre": "COPA JONY BLACK", "barcode": "9574", "compra": 3.3, "precio": 3.3, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9575", "ref": "9575", "nombre": "COPA JONY GREEN", "barcode": "9575", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9576", "ref": "9576", "nombre": "COPA JONY GOLD", "barcode": "9576", "compra": 9.5, "precio": 9.5, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9577", "ref": "9577", "nombre": "COPA JONY BLUE", "barcode": "9577", "compra": 25.0, "precio": 25.0, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9578", "ref": "9578", "nombre": "COPA MACALLAN", "barcode": "9578", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9579", "ref": "9579", "nombre": "COPA PASSPORT", "barcode": "9579", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9585", "ref": "9585", "nombre": "COPA ANIS", "barcode": "9585", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9586", "ref": "9586", "nombre": "COPA BAILEYS", "barcode": "9586", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9587", "ref": "9587", "nombre": "COPA COINTREAU", "barcode": "9587", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9588", "ref": "9588", "nombre": "COPA CREMA RON BARCELO", "barcode": "9588", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9589", "ref": "9589", "nombre": "COPA DOOLEYS", "barcode": "9589", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9590", "ref": "9590", "nombre": "COPA FRANGELICO", "barcode": "9590", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9591", "ref": "9591", "nombre": "COPA LICOR MANZANA", "barcode": "9591", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9592", "ref": "9592", "nombre": "COPA LICOR MELOCOTON", "barcode": "9592", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9593", "ref": "9593", "nombre": "COPA MANGAROCA", "barcode": "9593", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9594", "ref": "9594", "nombre": "COPA MARIA BRIZARD", "barcode": "9594", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9595", "ref": "9595", "nombre": "COPA MELODY", "barcode": "9595", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9596", "ref": "9596", "nombre": "COPA MENTA", "barcode": "9596", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9597", "ref": "9597", "nombre": "COPA PACHARAN", "barcode": "9597", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9598", "ref": "9598", "nombre": "COPA PONCHE", "barcode": "9598", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9599", "ref": "9599", "nombre": "COPA WHISKY PECHE", "barcode": "9599", "compra": 2.1, "precio": 2.1, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9400", "ref": "9400", "nombre": "COPA CARLOS III", "barcode": "9400", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9401", "ref": "9401", "nombre": "COPA COÑAC 103", "barcode": "9401", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9402", "ref": "9402", "nombre": "COPA MAGNO", "barcode": "9402", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9403", "ref": "9403", "nombre": "COPA MASCARO", "barcode": "9403", "compra": 2.1, "precio": 2.1, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9404", "ref": "9404", "nombre": "COPA RON PUJOL", "barcode": "9404", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9405", "ref": "9405", "nombre": "COPA SOBERANO", "barcode": "9405", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9406", "ref": "9406", "nombre": "COPA TERRY", "barcode": "9406", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9407", "ref": "9407", "nombre": "COPA VETERANO", "barcode": "9407", "compra": 1.6, "precio": 1.6, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9408", "ref": "9408", "nombre": "COPA ZACAPA 23", "barcode": "9408", "compra": 2.7, "precio": 2.7, "iva": 10, "cat": "copas_hielo", "emoji": "🧊"},
+    {"id": "p9420", "ref": "9420", "nombre": "CUBATA ABSOLUT (RED BULL)", "barcode": "9420", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9421", "ref": "9421", "nombre": "CUBATA BACARDI (RED BULL)", "barcode": "9421", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9422", "ref": "9422", "nombre": "CUBATA BALLANTINES (RED BULL)", "barcode": "9422", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9423", "ref": "9423", "nombre": "CUBATA BOMBAY SAFIR (RED BULL)", "barcode": "9423", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9424", "ref": "9424", "nombre": "CUBATA BEEFEATER (RED BULL)", "barcode": "9424", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9425", "ref": "9425", "nombre": "CUBATA BRUGAL (RED BULL)", "barcode": "9425", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9426", "ref": "9426", "nombre": "CUBATA CACIQUE (RED BULL)", "barcode": "9426", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9427", "ref": "9427", "nombre": "CUBATA CACIQUE ORIGEN (RED BULL)", "barcode": "9427", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9428", "ref": "9428", "nombre": "CUBATA COINTREAU (RED BULL)", "barcode": "9428", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9429", "ref": "9429", "nombre": "CUBATA CUTTY SARK (RED BULL)", "barcode": "9429", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9430", "ref": "9430", "nombre": "CUBATA FLOR DE CAÑA (RED BULL)", "barcode": "9430", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9431", "ref": "9431", "nombre": "CUBATA FOUR ROSES (RED BULL)", "barcode": "9431", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9432", "ref": "9432", "nombre": "CUBATA GIRO (RED BULL)", "barcode": "9432", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9433", "ref": "9433", "nombre": "CUBATA JACK DANIELS (RED BULL)", "barcode": "9433", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9434", "ref": "9434", "nombre": "CUBATA JB (RED BULL)", "barcode": "9434", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9435", "ref": "9435", "nombre": "CUBATA JONY RED (RED BULL)", "barcode": "9435", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9436", "ref": "9436", "nombre": "CUBATA JONY BLACK (RED BULL)", "barcode": "9436", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9437", "ref": "9437", "nombre": "CUBATA LARIOS (RED BULL)", "barcode": "9437", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9438", "ref": "9438", "nombre": "CUBATA MATUSALEM (RED BULL)", "barcode": "9438", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9439", "ref": "9439", "nombre": "CUBATA PAMPERO (RED BULL)", "barcode": "9439", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9440", "ref": "9440", "nombre": "CUBATA PAMPERO ANIVERSARIO (RED BULL)", "barcode": "9440", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9441", "ref": "9441", "nombre": "CUBATA PASSPORT (RED BULL)", "barcode": "9441", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9442", "ref": "9442", "nombre": "CUBATA PONCHE (RED BULL)", "barcode": "9442", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9443", "ref": "9443", "nombre": "CUBATA BARCELO (RED BULL)", "barcode": "9443", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9444", "ref": "9444", "nombre": "CUBATA SANTA TERESA (RED BULL)", "barcode": "9444", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9445", "ref": "9445", "nombre": "CUBATA SEVEN TIKI (RED BULL)", "barcode": "9445", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9446", "ref": "9446", "nombre": "CUBATA SMIRNOFF (RED BULL)", "barcode": "9446", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9447", "ref": "9447", "nombre": "CUBATA TANQUERAY (RED BULL)", "barcode": "9447", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9448", "ref": "9448", "nombre": "CUBATA TOVARICH (RED BULL)", "barcode": "9448", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9449", "ref": "9449", "nombre": "CUBATA ZACAPA 23 (RED BULL)", "barcode": "9449", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9450", "ref": "9450", "nombre": "CUBATA WHITE LABEL (RED BULL)", "barcode": "9450", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9451", "ref": "9451", "nombre": "CUBATA RED BULL", "barcode": "9451", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9460", "ref": "9460", "nombre": "CUBATA BALLANTINES", "barcode": "9460", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9461", "ref": "9461", "nombre": "CUBATA CUTTY SARK", "barcode": "9461", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9462", "ref": "9462", "nombre": "CUBATA FOUR ROSES", "barcode": "9462", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9463", "ref": "9463", "nombre": "CUBATA JB", "barcode": "9463", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9464", "ref": "9464", "nombre": "CUBATA JONY RED", "barcode": "9464", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9465", "ref": "9465", "nombre": "CUBATA JONY BLACK", "barcode": "9465", "compra": 4.8, "precio": 4.8, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9466", "ref": "9466", "nombre": "CUBATA JONY GREEN", "barcode": "9466", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9467", "ref": "9467", "nombre": "CUBATA PASSPORT", "barcode": "9467", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9468", "ref": "9468", "nombre": "CUBATA WHITE LABEL", "barcode": "9468", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9480", "ref": "9480", "nombre": "CUBATA BACARDI", "barcode": "9480", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9481", "ref": "9481", "nombre": "CUBATA BRUGAL", "barcode": "9481", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9482", "ref": "9482", "nombre": "CUBATA CACIQUE", "barcode": "9482", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9483", "ref": "9483", "nombre": "CUBATA CACIQUE ORIGEN", "barcode": "9483", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9484", "ref": "9484", "nombre": "CUBATA FLOR DE CAÑA", "barcode": "9484", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9485", "ref": "9485", "nombre": "CUBATA HAVANA 7", "barcode": "9485", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9486", "ref": "9486", "nombre": "CUBATA MATUSALEM", "barcode": "9486", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9487", "ref": "9487", "nombre": "CUBATA PAMPERO", "barcode": "9487", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9488", "ref": "9488", "nombre": "CUBATA PAMPERO ANIVERSARIO", "barcode": "9488", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9489", "ref": "9489", "nombre": "CUBATA RON BARCELO", "barcode": "9489", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9490", "ref": "9490", "nombre": "CUBATA SANTA TERESA", "barcode": "9490", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9491", "ref": "9491", "nombre": "CUBATA SEVEN TIKI", "barcode": "9491", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9300", "ref": "9300", "nombre": "CUBATA BOMBAY SAFIR", "barcode": "9300", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9301", "ref": "9301", "nombre": "CUBATA BEEFEATER", "barcode": "9301", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9302", "ref": "9302", "nombre": "CUBATA GIRO", "barcode": "9302", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9303", "ref": "9303", "nombre": "CUBATA LARIOS", "barcode": "9303", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9304", "ref": "9304", "nombre": "CUBATA SEAGRAMS", "barcode": "9304", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9305", "ref": "9305", "nombre": "CUBATA TANQUERAY", "barcode": "9305", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9306", "ref": "9306", "nombre": "CUBATA TEN", "barcode": "9306", "compra": 6.0, "precio": 6.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9320", "ref": "9320", "nombre": "CUBATA ABSOLUT", "barcode": "9320", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9321", "ref": "9321", "nombre": "CUBATA TOVARICH", "barcode": "9321", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9322", "ref": "9322", "nombre": "CUBATA SMIRNOFF", "barcode": "9322", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9330", "ref": "9330", "nombre": "CUBATA COINTREAU", "barcode": "9330", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9331", "ref": "9331", "nombre": "CUBATA JACK DANIELS", "barcode": "9331", "compra": 5.0, "precio": 5.0, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9332", "ref": "9332", "nombre": "CUBATA MARTINI BLANCO", "barcode": "9332", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9333", "ref": "9333", "nombre": "CUBATA MARTINI NEGRO", "barcode": "9333", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9334", "ref": "9334", "nombre": "CUBATA PONCHE", "barcode": "9334", "compra": 4.4, "precio": 4.4, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9335", "ref": "9335", "nombre": "CUBATA COMBINADO", "barcode": "9335", "compra": 4.5, "precio": 4.5, "iva": 10, "cat": "cubatas", "emoji": "🍸"},
+    {"id": "p9200", "ref": "9200", "nombre": "CHUPITO BALLANTINES", "barcode": "9200", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9201", "ref": "9201", "nombre": "CHUPITO BUCHANANS", "barcode": "9201", "compra": 3.0, "precio": 3.0, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9202", "ref": "9202", "nombre": "CHUPITO CARDHU", "barcode": "9202", "compra": 3.0, "precio": 3.0, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9203", "ref": "9203", "nombre": "CHUPITO CARDHU BLACK", "barcode": "9203", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9204", "ref": "9204", "nombre": "CHUPITO CUTTY SARK", "barcode": "9204", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9205", "ref": "9205", "nombre": "CHUPITO FOUR ROSES", "barcode": "9205", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9206", "ref": "9206", "nombre": "CHUPITO GLEN ROTHERS", "barcode": "9206", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9207", "ref": "9207", "nombre": "CHUPITO JB", "barcode": "9207", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9208", "ref": "9208", "nombre": "CHUPITO JONY RED", "barcode": "9208", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9209", "ref": "9209", "nombre": "CHUPITO JONY BLACK", "barcode": "9209", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9210", "ref": "9210", "nombre": "CHUPITO JONY GREEN", "barcode": "9210", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9211", "ref": "9211", "nombre": "CHUPITO JONY GOLD", "barcode": "9211", "compra": 5.5, "precio": 5.5, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9212", "ref": "9212", "nombre": "CHUPITO JONY BLUE", "barcode": "9212", "compra": 10.0, "precio": 10.0, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9213", "ref": "9213", "nombre": "CHUPITO MACALLAN", "barcode": "9213", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9214", "ref": "9214", "nombre": "CHUPITO PASSPORT", "barcode": "9214", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9215", "ref": "9215", "nombre": "CHUPITO WHITE LABEL", "barcode": "9215", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9230", "ref": "9230", "nombre": "CHUPITO FLOR DE CAÑA", "barcode": "9230", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9231", "ref": "9231", "nombre": "CHUPITO HAVANA 7", "barcode": "9231", "compra": 2.0, "precio": 2.0, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9232", "ref": "9232", "nombre": "CHUPITO RON PUJOL", "barcode": "9232", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9233", "ref": "9233", "nombre": "CHUPITO ANIS", "barcode": "9233", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9234", "ref": "9234", "nombre": "CHUPITO BAILEYS", "barcode": "9234", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9235", "ref": "9235", "nombre": "CHUPITO COINTREAU", "barcode": "9235", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9236", "ref": "9236", "nombre": "CHUPITO CREMA RON BARCELO", "barcode": "9236", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9237", "ref": "9237", "nombre": "CHUPITO DOOLEYS", "barcode": "9237", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9238", "ref": "9238", "nombre": "CHUPITO FRANGELICO", "barcode": "9238", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9239", "ref": "9239", "nombre": "CHUPITO JACK DANIELS", "barcode": "9239", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9240", "ref": "9240", "nombre": "CHUPITO LICOR MANZANA", "barcode": "9240", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9241", "ref": "9241", "nombre": "CHUPITO LICOR MELOCOTON", "barcode": "9241", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9242", "ref": "9242", "nombre": "CHUPITO MARIA BRIZARD", "barcode": "9242", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9243", "ref": "9243", "nombre": "CHUPITO PACHARAN", "barcode": "9243", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9244", "ref": "9244", "nombre": "CHUPITO PONCHE", "barcode": "9244", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9245", "ref": "9245", "nombre": "CHUPITO SMIRNOFF", "barcode": "9245", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9246", "ref": "9246", "nombre": "CHUPITO SOBERANO", "barcode": "9246", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9247", "ref": "9247", "nombre": "CHUPITO TEQUILA", "barcode": "9247", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9248", "ref": "9248", "nombre": "CHUPITO WHISKY PECHE", "barcode": "9248", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9249", "ref": "9249", "nombre": "CHUPITO COMBINADO", "barcode": "9249", "compra": 1.7, "precio": 1.7, "iva": 10, "cat": "chupitos", "emoji": "🥂"},
+    {"id": "p9701", "ref": "9701", "nombre": "CHIPS", "barcode": "9701", "compra": 1.1, "precio": 1.1, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9702", "ref": "9702", "nombre": "CALAMAR LATA", "barcode": "9702", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9703", "ref": "9703", "nombre": "MEJILLONES LATA", "barcode": "9703", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9704", "ref": "9704", "nombre": "SARDINAS LATA", "barcode": "9704", "compra": 2.5, "precio": 2.5, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9705", "ref": "9705", "nombre": "BERBERECHOS", "barcode": "9705", "compra": 7.0, "precio": 7.0, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9707", "ref": "9707", "nombre": "OLIVA", "barcode": "9707", "compra": 1.5, "precio": 1.5, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9710", "ref": "9710", "nombre": "PAN CON TOMATE", "barcode": "9710", "compra": 0.5, "precio": 0.5, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9711", "ref": "9711", "nombre": "SUPLEMENTO", "barcode": "9711", "compra": 1.0, "precio": 1.0, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9712", "ref": "9712", "nombre": "SANGRIA VINO", "barcode": "9712", "compra": 9.0, "precio": 9.0, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9713", "ref": "9713", "nombre": "SANGRIA CAVA", "barcode": "9713", "compra": 12.0, "precio": 12.0, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9714", "ref": "9714", "nombre": "CUBATA GODOY", "barcode": "9714", "compra": 3.5, "precio": 3.5, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9715", "ref": "9715", "nombre": "BARRA PAN", "barcode": "9715", "compra": 0.9, "precio": 0.9, "iva": 10, "cat": "varios", "emoji": "🛒"},
+    {"id": "p9716", "ref": "9716", "nombre": "BOLSA HIELO", "barcode": "9716", "compra": 2.0, "precio": 2.0, "iva": 10, "cat": "varios", "emoji": "🛒"},
+  ];
+  return {
+    usuarios:[
+      {id:"u1", nombre:"Admin",      rol:"admin",    pin:"", icono:"🔑"},
+      {id:"u2", nombre:"Juan Luis",  rol:"admin",    pin:"", icono:"🧑‍💼"},
+      {id:"u3", nombre:"Camarero 1", rol:"camarero", pin:"", icono:"🧑‍🍳"},
+      {id:"u4", nombre:"Camarero 2", rol:"camarero", pin:"", icono:"🧑‍🍳"},
+    ],
+    categorias:cats, productos, clientes:[],
+    tickets:[], numTicket:1,
+    mesas:Array.from({length:10},(_,i)=>({id:"m"+(i+1), nombre:"Mesa "+(i+1), lineas:[], cliente:null})),
+    cierres:[], aperturaCaja:new Date().toISOString(),
+    config:{nombre:"Bar Woodpeckers", dir:"Calle Mayor 1, Madrid", nif:"B-00000000", pie:"¡Gracias por su visita!", numMesas:10}
+  };
+}
+
+let db = null;
+function cargar(){
+  try{ db = JSON.parse(localStorage.getItem(DB_KEY)); }catch(e){ db = null; }
+  if(!db || !db.productos){ db = datosIniciales(); guardar(); }
+}
+function guardar(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+/* ---------- Estado de la sesión ---------- */
+let usuario = null;          // usuario logueado
+let ticket = [];             // líneas del ticket actual [{prodId,nombre,precio,uds,iva}]
+let mesaActual = null;       // id de mesa o null (venta directa)
+let clienteActual = null;    // id de cliente o null
+let lineaSel = -1;           // índice de línea seleccionada
+let buffer = "";             // teclado numérico
+let pagoMetodo = "Efectivo";
+let reciboTicketId = null;   // ticket mostrado en el modal de recibo
+
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("visible");
+  clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove("visible"), 2200);
+}
+
+/* ---------- Reloj ---------- */
+function tic(){
+  const s = new Date().toLocaleString("es-ES",{dateStyle:"short",timeStyle:"medium"});
+  $("#reloj").textContent = s; $("#relojLogin").textContent = s;
+}
+setInterval(tic,1000); tic();
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+function pintarLogin(){
+  $("#usuarios").innerHTML = "";
+  db.usuarios.forEach(u=>{
+    const b = document.createElement("button");
+    b.innerHTML = `<span class="icono">${u.icono||"👤"}</span>${u.nombre}`;
+    b.onclick = ()=>{
+      if(u.pin){ pedirPin(u); } else { entrar(u); }
+    };
+    $("#usuarios").appendChild(b);
+  });
+}
+function pedirPin(u){
+  abrirModal("modalPin");
+  $("#pinUsuario").textContent = u.nombre;
+  $("#pinInput").value = "";
+  setTimeout(()=>$("#pinInput").focus(),50);
+  $("#btnPinOk").onclick = ()=>{
+    if($("#pinInput").value === u.pin){ cerrarModal(); entrar(u); }
+    else toast("Contraseña incorrecta");
+  };
+}
+function entrar(u){
+  usuario = u;
+  $("#login").style.display = "none";
+  $("#app").style.display = "flex";
+  $("#sbUsuario").textContent = "👤 " + u.nombre + " (" + u.rol + ")";
+  $$('[data-rol="admin"]').forEach(p=>p.style.display = (u.rol==="admin") ? "" : "none");
+  irA("mesas");
+}
+function salir(){
+  usuario = null; ticket = []; mesaActual = null; clienteActual = null;
+  $("#app").style.display = "none";
+  $("#login").style.display = "flex";
+  pintarLogin();
+}
+$("#btnSalir").onclick = salir;
+$("#btnSalir2").onclick = salir;
+
+/* =========================================================
+   NAVEGACIÓN
+   ========================================================= */
+const vistas = {ventas:"vVentas", mesas:"vMesas", historial:"vHistorial", caja:"vCaja",
+                clientes:"vClientes", productos:"vProductos", categorias:"vCategorias",
+                usuarios:"vUsuarios", config:"vConfig"};
+function irA(nombre){
+  $$(".vista").forEach(v=>v.classList.remove("visible"));
+  $("#"+vistas[nombre]).classList.add("visible");
+  $$("#sidebar .item").forEach(b=>b.classList.toggle("activo", b.dataset.vista===nombre));
+  $("#sidebar").classList.remove("abierto");
+  const pintores = {ventas:pintarVentas, mesas:pintarMesas, historial:pintarHistorial, caja:pintarCaja,
+                    clientes:pintarClientes, productos:pintarProductos, categorias:pintarCategorias,
+                    usuarios:pintarUsuarios, config:pintarConfig};
+  pintores[nombre]();
+}
+$$("#sidebar .item[data-vista]").forEach(b=> b.onclick = ()=>irA(b.dataset.vista));
+$("#btnMenu").onclick = ()=> $("#sidebar").classList.toggle("abierto");
+$("#sbMesas").onclick = ()=> irA("mesas");
+
+/* =========================================================
+   VENTAS
+   ========================================================= */
+let catSel = null;
+
+function pintarVentas(){
+  if(catSel===null && db.categorias.length) catSel = db.categorias[0].id;
+  $("#ticketNombre").textContent = mesaActual ? db.mesas.find(m=>m.id===mesaActual).nombre : "Venta directa";
+  const cli = db.clientes.find(c=>c.id===clienteActual);
+  $("#lblCliente").textContent = cli ? cli.nombre : "Cliente";
+  pintarCats(); pintarProds(); pintarTicket();
+}
+function pintarCats(){
+  $("#cats").innerHTML = "";
+  db.categorias.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = c.id===catSel ? "activo" : "";
+    b.innerHTML = `<span class="icono">${c.emoji||"🗂️"}</span>${c.nombre}`;
+    b.onclick = ()=>{ catSel=c.id; pintarCats(); pintarProds(); };
+    $("#cats").appendChild(b);
+  });
+}
+function pintarProds(){
+  $("#prods").innerHTML = "";
+  db.productos.filter(p=>p.cat===catSel).forEach(p=>{
+    const b = document.createElement("button");
+    b.innerHTML = `<span class="icono">${p.emoji||"📦"}</span><span class="nom">${p.nombre}</span><span class="precio">${eur(p.precio)}</span>`;
+    b.onclick = ()=>anadirProducto(p);
+    $("#prods").appendChild(b);
+  });
+}
+function anadirProducto(p){
+  let uds = 1;
+  if(buffer && !isNaN(parseFloat(buffer))){ uds = parseFloat(buffer); limpiarBuffer(); }
+  const ex = ticket.find(l=>l.prodId===p.id && l.precio===p.precio);
+  if(ex){ ex.uds = r2(ex.uds + uds); lineaSel = ticket.indexOf(ex); }
+  else { ticket.push({prodId:p.id, nombre:p.nombre, precio:p.precio, uds, iva:p.iva}); lineaSel = ticket.length-1; }
+  pintarTicket();
+}
+function totalesTicket(lineas){
+  let total = 0, ivaTot = 0;
+  lineas.forEach(l=>{
+    const imp = l.precio * l.uds;
+    total += imp;
+    ivaTot += imp - imp/(1+l.iva/100);   // precios con IVA incluido
+  });
+  return {total:r2(total), iva:r2(ivaTot), base:r2(total-ivaTot)};
+}
+function pintarTicket(){
+  const tb = $("#ticketBody"); tb.innerHTML = "";
+  ticket.forEach((l,i)=>{
+    const tr = document.createElement("tr");
+    if(i===lineaSel) tr.className = "sel";
+    tr.innerHTML = `<td>${l.nombre}</td><td class="num">${eur(l.precio)}</td><td class="num">x${l.uds}</td>
+                    <td class="num">${l.iva}%</td><td class="num">${eur(l.precio*l.uds)}</td>`;
+    tr.onclick = ()=>{ lineaSel=i; pintarTicket(); };
+    tb.appendChild(tr);
+  });
+  const t = totalesTicket(ticket);
+  $("#tSubtotal").textContent = eur(t.base);
+  $("#tIva").textContent = eur(t.iva);
+  $("#tTotal").textContent = eur(t.total);
+  $("#tabMesaInfo").textContent = ticket.length ? `${ticket.length} · ${eur(t.total)}` : "(0)";
+  $("#kpTotalVal").textContent = eur(t.total);
+  const cont = $("#ticketLineas"); cont.scrollTop = cont.scrollHeight;
+  guardarMesaActual();
+}
+/* Pestañas móviles de la pantalla de ventas (Productos / Mesa / Cobro) */
+function mostrarPanelVentas(cual){
+  const v = $("#vVentas");
+  v.classList.remove("m-productos","m-mesa","m-cobro");
+  v.classList.add("m-"+cual);
+  $("#tabProductos").classList.toggle("activo", cual==="productos");
+  $("#tabMesa").classList.toggle("activo", cual==="mesa");
+  $("#tabCobro").classList.toggle("activo", cual==="cobro");
+}
+$("#tabProductos").onclick = ()=>mostrarPanelVentas("productos");
+$("#tabMesa").onclick = ()=>mostrarPanelVentas("mesa");
+$("#tabCobro").onclick = ()=>mostrarPanelVentas("cobro");
+/* Cambiar unidades de la línea seleccionada (botones ＋/− y teclado) */
+function cambiarUds(delta){
+  const lin = ticket[lineaSel]; if(!lin) return;
+  lin.uds = r2(lin.uds + delta);
+  if(lin.uds<=0){ ticket.splice(lineaSel,1); lineaSel=Math.min(lineaSel,ticket.length-1); }
+  pintarTicket();
+}
+$("#btnMasUd").onclick = ()=>cambiarUds(1);
+$("#btnMenosUd").onclick = ()=>cambiarUds(-1);
+$("#btnCobrarMesa").onclick = ()=>abrirPago();
+/* Persiste el ticket en su mesa en cada cambio, para no perder nada al navegar */
+function guardarMesaActual(){
+  if(!mesaActual) return;
+  const m = db.mesas.find(x=>x.id===mesaActual);
+  if(!m) return;
+  m.lineas = ticket.map(l=>({...l}));
+  m.cliente = clienteActual;
+  guardar();
+}
+function limpiarBuffer(){ buffer=""; $("#kpDisplay").innerHTML = "&nbsp;"; }
+function setBuffer(s){ buffer=s; $("#kpDisplay").textContent = s || " "; }
+
+$("#kpGrid").onclick = e=>{
+  const k = e.target.closest("button")?.dataset.k; if(!k) return;
+  const lin = ticket[lineaSel];
+  switch(k){
+    case "CE": limpiarBuffer(); break;
+    case "+": cambiarUds(1); break;
+    case "-": cambiarUds(-1); break;
+    case "uds":
+      if(lin && buffer && !isNaN(parseFloat(buffer))){ lin.uds = parseFloat(buffer); limpiarBuffer(); pintarTicket(); }
+      else toast("Escriba un número y seleccione una línea");
+      break;
+    case "precio":
+      if(usuario.rol!=="admin"){ toast("Solo administradores"); break; }
+      if(lin && buffer && !isNaN(parseFloat(buffer))){ lin.precio = parseFloat(buffer); limpiarBuffer(); pintarTicket(); }
+      else toast("Escriba el precio y seleccione una línea");
+      break;
+    case "del": borrarLinea(); break;
+    case "cobrar": abrirPago(); break;
+    case "aparcar": aparcarEnMesa(); break;
+    default:  // dígitos y punto
+      if(k==="." && buffer.includes(".")) break;
+      setBuffer(buffer + k);
+  }
+};
+function borrarLinea(){
+  if(lineaSel>=0 && ticket[lineaSel]){ ticket.splice(lineaSel,1); lineaSel=Math.min(lineaSel,ticket.length-1); pintarTicket(); }
+}
+$("#btnBorrarLinea").onclick = borrarLinea;
+$("#btnCancelarTicket").onclick = ()=>{
+  if(!ticket.length) return;
+  if(confirm("¿Cancelar el ticket actual?")){
+    ticket = []; lineaSel=-1;
+    if(mesaActual){ const m = db.mesas.find(x=>x.id===mesaActual); m.lineas=[]; m.cliente=null; guardar(); }
+    pintarTicket();
+  }
+};
+
+/* Guardar el ticket en su mesa y volver al plano */
+function aparcarEnMesa(){
+  if(mesaActual){
+    const m = db.mesas.find(x=>x.id===mesaActual);
+    m.lineas = ticket; m.cliente = clienteActual; guardar();
+    ticket=[]; mesaActual=null; clienteActual=null; lineaSel=-1;
+    irA("mesas"); toast("Ticket guardado en " + m.nombre);
+  } else if(ticket.length){
+    irA("mesas"); toast("Seleccione una mesa para guardar el ticket");
+    ticketPendiente = ticket.slice(); ticket=[];
+  } else { irA("mesas"); }
+}
+let ticketPendiente = null;
+
+/* ---------- Selector de cliente ---------- */
+$("#btnCliente").onclick = ()=>{
+  abrirModal("modalCliente");
+  $("#selCliBuscar").value = "";
+  pintarSelCli("");
+};
+$("#selCliBuscar").oninput = e=>pintarSelCli(e.target.value);
+function pintarSelCli(filtro){
+  const f = filtro.toLowerCase();
+  const cont = $("#selCliLista"); cont.innerHTML = "";
+  db.clientes.filter(c=>c.nombre.toLowerCase().includes(f)).forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "item"; b.textContent = c.nombre;
+    b.onclick = ()=>{ clienteActual=c.id; cerrarModal(); pintarVentas(); };
+    cont.appendChild(b);
+  });
+  if(!cont.children.length) cont.innerHTML = '<div style="padding:12px;color:#888">Sin resultados</div>';
+}
+$("#btnSinCliente").onclick = ()=>{ clienteActual=null; cerrarModal(); pintarVentas(); };
+
+/* =========================================================
+   PAGO
+   ========================================================= */
+function abrirPago(){
+  if(!ticket.length){ toast("El ticket está vacío"); return; }
+  const t = totalesTicket(ticket);
+  abrirModal("modalPago");
+  $("#pagoTotal").textContent = eur(t.total);
+  $("#pagoInput").value = t.total.toFixed(2);
+  pagoMetodo = "Efectivo";
+  $$("#pagoMetodos button").forEach(b=>b.classList.toggle("sel", b.dataset.metodo===pagoMetodo));
+  // botones rápidos: exacto, redondeos y billetes
+  const sugerencias = [...new Set([t.total, Math.ceil(t.total), Math.ceil(t.total/5)*5, Math.ceil(t.total/10)*10, Math.ceil(t.total/20)*20, 50].filter(v=>v>=t.total))].slice(0,6);
+  $("#pagoRapido").innerHTML = "";
+  sugerencias.forEach(v=>{
+    const b = document.createElement("button");
+    b.textContent = eur(v);
+    b.onclick = ()=>{ $("#pagoInput").value = v.toFixed(2); calcCambio(); };
+    $("#pagoRapido").appendChild(b);
+  });
+  calcCambio();
+}
+function calcCambio(){
+  const t = totalesTicket(ticket);
+  const ent = parseFloat($("#pagoInput").value) || 0;
+  $("#pagoCambioVal").textContent = eur(Math.max(0, ent - t.total));
+}
+$("#pagoInput").oninput = calcCambio;
+$$("#pagoMetodos button").forEach(b=> b.onclick = ()=>{
+  pagoMetodo = b.dataset.metodo;
+  $$("#pagoMetodos button").forEach(x=>x.classList.toggle("sel", x===b));
+});
+$("#btnConfirmarPago").onclick = ()=>{
+  const t = totalesTicket(ticket);
+  const ent = parseFloat($("#pagoInput").value) || 0;
+  if(pagoMetodo==="Efectivo" && ent < t.total){ toast("Cantidad entregada insuficiente"); return; }
+  const tk = {
+    id:uid(), num:db.numTicket++, fecha:new Date().toISOString(),
+    usuario:usuario.nombre, cliente:clienteActual,
+    lineas:ticket.map(l=>({...l})), pago:pagoMetodo,
+    entregado: pagoMetodo==="Efectivo" ? ent : t.total,
+    total:t.total, iva:t.iva, base:t.base
+  };
+  db.tickets.push(tk);
+  if(mesaActual){ const m = db.mesas.find(x=>x.id===mesaActual); m.lineas=[]; m.cliente=null; }
+  guardar();
+  ticket=[]; lineaSel=-1; mesaActual=null; clienteActual=null;
+  cerrarModal();
+  mostrarRecibo(tk);
+  pintarVentas();
+  mostrarPanelVentas("productos");
+};
+
+/* =========================================================
+   RECIBO
+   ========================================================= */
+function lineaRecibo(izq, der, ancho=32){
+  izq = String(izq); der = String(der);
+  const esp = Math.max(1, ancho - izq.length - der.length);
+  return izq + " ".repeat(esp) + der;
+}
+function textoRecibo(tk){
+  const c = db.config, A = 32, sep = "-".repeat(A);
+  const cen = s => { const p = Math.max(0,Math.floor((A-s.length)/2)); return " ".repeat(p)+s; };
+  let s = "";
+  s += cen(c.nombre)+"\n" + cen(c.dir)+"\n" + cen("NIF: "+c.nif)+"\n" + sep + "\n";
+  s += lineaRecibo("Ticket Nº "+tk.num, new Date(tk.fecha).toLocaleString("es-ES",{dateStyle:"short",timeStyle:"short"})) + "\n";
+  s += lineaRecibo("Atendido por: "+tk.usuario,"") + "\n";
+  const cli = db.clientes.find(x=>x.id===tk.cliente);
+  if(cli) s += lineaRecibo("Cliente: "+cli.nombre,"") + "\n";
+  s += sep + "\n";
+  tk.lineas.forEach(l=>{
+    s += l.nombre + "\n";
+    s += lineaRecibo("  " + l.uds + " x " + l.precio.toFixed(2), (l.precio*l.uds).toFixed(2)+" €") + "\n";
+  });
+  s += sep + "\n";
+  s += lineaRecibo("Base imponible", tk.base.toFixed(2)+" €") + "\n";
+  s += lineaRecibo("IVA", tk.iva.toFixed(2)+" €") + "\n";
+  s += lineaRecibo("TOTAL", tk.total.toFixed(2)+" €") + "\n";
+  s += sep + "\n";
+  s += lineaRecibo("Pago: "+tk.pago, tk.entregado.toFixed(2)+" €") + "\n";
+  if(tk.pago==="Efectivo") s += lineaRecibo("Cambio", (tk.entregado-tk.total).toFixed(2)+" €") + "\n";
+  s += sep + "\n" + cen(c.pie) + "\n";
+  return s;
+}
+function mostrarRecibo(tk, permitirAnular){
+  reciboTicketId = tk.id;
+  abrirModal("modalRecibo");
+  $("#recibo").textContent = textoRecibo(tk);
+  $("#btnAnularTicket").style.display = (permitirAnular && usuario.rol==="admin") ? "" : "none";
+}
+$("#btnImprimir").onclick = ()=>{
+  $("#overlay").classList.add("imprimiendo");
+  window.print();
+  setTimeout(()=>$("#overlay").classList.remove("imprimiendo"), 500);
+};
+$("#btnAnularTicket").onclick = ()=>{
+  if(!confirm("¿Anular este ticket? Esta acción no se puede deshacer.")) return;
+  db.tickets = db.tickets.filter(t=>t.id!==reciboTicketId);
+  guardar(); cerrarModal(); pintarHistorial(); toast("Ticket anulado");
+};
+
+/* =========================================================
+   MESAS
+   ========================================================= */
+function pintarMesas(){
+  // ajustar número de mesas según configuración
+  const n = db.config.numMesas;
+  while(db.mesas.length < n) db.mesas.push({id:"m"+(db.mesas.length+1), nombre:"Mesa "+(db.mesas.length+1), lineas:[], cliente:null});
+  if(db.mesas.length > n && db.mesas.slice(n).every(m=>!m.lineas.length)) db.mesas = db.mesas.slice(0,n);
+
+  $("#planoTitulo").textContent = db.config.nombre;
+  const cont = $("#plano"); cont.innerHTML = "";
+  db.mesas.forEach(m=>{
+    const d = document.createElement("div");
+    const t = totalesTicket(m.lineas);
+    d.className = "mesa" + (m.lineas.length ? " ocupada" : "");
+    d.innerHTML = `<span class="icono">${m.lineas.length ? "🍽️" : "🪑"}</span>${m.nombre}` +
+                  (m.lineas.length ? `<span class="info">${m.lineas.length} líneas · ${eur(t.total)}</span>` : `<span class="info">Libre</span>`);
+    d.onclick = ()=>abrirMesa(m);
+    cont.appendChild(d);
+  });
+}
+function abrirMesa(m){
+  if(ticketPendiente){
+    if(m.lineas.length){ toast("Esa mesa ya está ocupada"); return; }
+    m.lineas = ticketPendiente; ticketPendiente = null; guardar(); pintarMesas(); toast("Ticket guardado en "+m.nombre);
+    return;
+  }
+  mesaActual = m.id;
+  ticket = m.lineas.map(l=>({...l}));
+  clienteActual = m.cliente;
+  lineaSel = ticket.length-1;
+  irA("ventas");
+  mostrarPanelVentas(ticket.length ? "mesa" : "productos");
+}
+$("#btnLlevar").onclick = ()=>{
+  if(ticketPendiente){ ticket = ticketPendiente; ticketPendiente=null; }
+  else { ticket=[]; }
+  mesaActual=null; clienteActual=null; lineaSel=ticket.length-1;
+  irA("ventas");
+  mostrarPanelVentas("productos");
+};
+
+/* =========================================================
+   HISTORIAL (Editar ventas)
+   ========================================================= */
+let histFiltroFecha = null;
+function pintarHistorial(){
+  const tb = $("#histBody"); tb.innerHTML = "";
+  let lista = db.tickets.slice().reverse();
+  if(histFiltroFecha) lista = lista.filter(t=>t.fecha.slice(0,10)===histFiltroFecha);
+  lista.forEach(t=>{
+    const cli = db.clientes.find(x=>x.id===t.cliente);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${t.num}</td><td>${new Date(t.fecha).toLocaleString("es-ES",{dateStyle:"short",timeStyle:"short"})}</td>
+                    <td>${t.usuario}</td><td>${cli?cli.nombre:"—"}</td><td>${t.pago}</td><td class="num"><b>${eur(t.total)}</b></td>`;
+    tr.onclick = ()=>mostrarRecibo(t, true);
+    tb.appendChild(tr);
+  });
+  if(!lista.length) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;padding:20px">No hay tickets</td></tr>';
+}
+$("#histFecha").onchange = e=>{ histFiltroFecha = e.target.value || null; pintarHistorial(); };
+$("#histHoy").onclick = ()=>{ histFiltroFecha = new Date().toISOString().slice(0,10); $("#histFecha").value = histFiltroFecha; pintarHistorial(); };
+$("#histTodos").onclick = ()=>{ histFiltroFecha = null; $("#histFecha").value=""; pintarHistorial(); };
+
+/* =========================================================
+   CIERRE DE CAJA
+   ========================================================= */
+function ticketsSesion(){
+  return db.tickets.filter(t=>t.fecha >= db.aperturaCaja);
+}
+function pintarCaja(){
+  const ts = ticketsSesion();
+  const efectivo = ts.filter(t=>t.pago==="Efectivo").reduce((a,t)=>a+t.total,0);
+  const tarjeta  = ts.filter(t=>t.pago==="Tarjeta").reduce((a,t)=>a+t.total,0);
+  const iva      = ts.reduce((a,t)=>a+t.iva,0);
+  const total    = efectivo + tarjeta;
+  $("#cajaResumen").innerHTML = `
+    <div class="fila"><span>Apertura de caja</span><b>${new Date(db.aperturaCaja).toLocaleString("es-ES",{dateStyle:"short",timeStyle:"short"})}</b></div>
+    <div class="fila"><span>Tickets</span><b>${ts.length}</b></div>
+    <div class="fila"><span>💵 Efectivo</span><b>${eur(efectivo)}</b></div>
+    <div class="fila"><span>💳 Tarjeta</span><b>${eur(tarjeta)}</b></div>
+    <div class="fila"><span>IVA repercutido</span><b>${eur(iva)}</b></div>
+    <div class="fila total"><span>Total ventas</span><b>${eur(total)}</b></div>`;
+  const tb = $("#cajaCierres tbody"); tb.innerHTML = "";
+  db.cierres.slice().reverse().forEach(c=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${new Date(c.apertura).toLocaleString("es-ES",{dateStyle:"short",timeStyle:"short"})}</td>
+                    <td>${new Date(c.cierre).toLocaleString("es-ES",{dateStyle:"short",timeStyle:"short"})}</td>
+                    <td class="num">${c.tickets}</td><td class="num"><b>${eur(c.total)}</b></td>`;
+    tb.appendChild(tr);
+  });
+}
+$("#btnCerrarCaja").onclick = ()=>{
+  const ts = ticketsSesion();
+  if(!ts.length){ toast("No hay ventas en esta sesión"); return; }
+  if(!confirm("¿Cerrar la caja? Se archivará la sesión actual.")) return;
+  db.cierres.push({
+    apertura:db.aperturaCaja, cierre:new Date().toISOString(),
+    tickets:ts.length, total:r2(ts.reduce((a,t)=>a+t.total,0))
+  });
+  db.aperturaCaja = new Date().toISOString();
+  guardar(); pintarCaja(); toast("Caja cerrada");
+};
+
+/* =========================================================
+   CLIENTES
+   ========================================================= */
+let cliSel = null;
+function pintarClientes(filtro=""){
+  const f = filtro.toLowerCase();
+  const cont = $("#cliLista"); cont.innerHTML = "";
+  db.clientes.filter(c=>c.nombre.toLowerCase().includes(f)).forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "item" + (c.id===cliSel ? " sel":"");
+    b.innerHTML = `<span>${c.nombre}</span><span style="opacity:.6">${c.tel||""}</span>`;
+    b.onclick = ()=>{ cliSel=c.id; cargarFormCli(c); pintarClientes($("#cliBuscar").value); };
+    cont.appendChild(b);
+  });
+}
+function cargarFormCli(c){
+  $("#cliTitulo").textContent = c ? c.nombre : "Nuevo cliente";
+  $("#cliNombre").value = c?.nombre||""; $("#cliNif").value = c?.nif||"";
+  $("#cliTel").value = c?.tel||""; $("#cliEmail").value = c?.email||""; $("#cliDir").value = c?.dir||"";
+}
+$("#cliBuscar").oninput = e=>pintarClientes(e.target.value);
+$("#cliNuevo").onclick = ()=>{ cliSel=null; cargarFormCli(null); pintarClientes($("#cliBuscar").value); };
+$("#cliGuardar").onclick = ()=>{
+  const nombre = $("#cliNombre").value.trim();
+  if(!nombre){ toast("El nombre es obligatorio"); return; }
+  const datos = {nombre, nif:$("#cliNif").value.trim(), tel:$("#cliTel").value.trim(), email:$("#cliEmail").value.trim(), dir:$("#cliDir").value.trim()};
+  if(cliSel){ Object.assign(db.clientes.find(c=>c.id===cliSel), datos); }
+  else { const c = {id:uid(), ...datos}; db.clientes.push(c); cliSel=c.id; }
+  guardar(); pintarClientes($("#cliBuscar").value); toast("Cliente guardado");
+};
+$("#cliBorrar").onclick = ()=>{
+  if(!cliSel) return;
+  if(!confirm("¿Eliminar este cliente?")) return;
+  db.clientes = db.clientes.filter(c=>c.id!==cliSel);
+  cliSel=null; cargarFormCli(null); guardar(); pintarClientes();
+};
+
+/* =========================================================
+   PRODUCTOS
+   ========================================================= */
+let prodSel = null;
+function pintarProductos(filtro=""){
+  const f = filtro.toLowerCase();
+  const cont = $("#prodLista"); cont.innerHTML = "";
+  // rellenar select de categorías
+  const sel = $("#prodCat"); sel.innerHTML = "";
+  db.categorias.forEach(c=>{ const o = document.createElement("option"); o.value=c.id; o.textContent=c.nombre; sel.appendChild(o); });
+  db.productos
+    .filter(p=>p.nombre.toLowerCase().includes(f) || p.ref.includes(f) || (p.barcode||"").includes(f))
+    .forEach(p=>{
+      const b = document.createElement("button");
+      b.className = "item" + (p.id===prodSel ? " sel":"");
+      b.innerHTML = `<span>${p.emoji||""} ${p.ref} · ${p.nombre}</span><span style="opacity:.7">${eur(p.precio)}</span>`;
+      b.onclick = ()=>{ prodSel=p.id; cargarFormProd(p); pintarProductos($("#prodBuscar").value); };
+      cont.appendChild(b);
+    });
+  if(prodSel && !db.productos.find(p=>p.id===prodSel)) prodSel=null;
+}
+function cargarFormProd(p){
+  $("#prodTitulo").textContent = p ? (p.ref+" – "+p.nombre) : "Nuevo producto";
+  $("#prodRef").value = p?.ref||siguienteRef();
+  $("#prodNombre").value = p?.nombre||"";
+  $("#prodBarcode").value = p?.barcode||"";
+  $("#prodCompra").value = p?.compra ?? "";
+  $("#prodVenta").value = p?.precio ?? "";
+  $("#prodIva").value = p?.iva ?? 21;
+  $("#prodCat").value = p?.cat || (db.categorias[0]?.id||"");
+  $("#prodEmoji").value = p?.emoji||"📦";
+}
+function siguienteRef(){
+  const max = db.productos.reduce((a,p)=>Math.max(a, parseInt(p.ref)||0), 0);
+  return String(max+1).padStart(3,"0");
+}
+$("#prodBuscar").oninput = e=>pintarProductos(e.target.value);
+$("#prodNuevo").onclick = ()=>{ prodSel=null; cargarFormProd(null); pintarProductos($("#prodBuscar").value); };
+$("#prodGuardar").onclick = ()=>{
+  const nombre = $("#prodNombre").value.trim();
+  const precio = parseFloat($("#prodVenta").value);
+  if(!nombre || isNaN(precio)){ toast("Nombre y precio de venta son obligatorios"); return; }
+  const datos = {
+    ref:$("#prodRef").value.trim()||siguienteRef(), nombre,
+    barcode:$("#prodBarcode").value.trim(),
+    compra:parseFloat($("#prodCompra").value)||0, precio:r2(precio),
+    iva:parseFloat($("#prodIva").value), cat:$("#prodCat").value,
+    emoji:$("#prodEmoji").value.trim()||"📦"
+  };
+  if(prodSel){ Object.assign(db.productos.find(p=>p.id===prodSel), datos); }
+  else { const p = {id:uid(), ...datos}; db.productos.push(p); prodSel=p.id; }
+  guardar(); pintarProductos($("#prodBuscar").value); toast("Producto guardado");
+};
+$("#prodBorrar").onclick = ()=>{
+  if(!prodSel) return;
+  if(!confirm("¿Eliminar este producto?")) return;
+  db.productos = db.productos.filter(p=>p.id!==prodSel);
+  prodSel=null; cargarFormProd(null); guardar(); pintarProductos();
+};
+
+/* =========================================================
+   CATEGORÍAS
+   ========================================================= */
+let catAdminSel = null;
+function pintarCategorias(){
+  const cont = $("#catLista"); cont.innerHTML = "";
+  db.categorias.forEach(c=>{
+    const n = db.productos.filter(p=>p.cat===c.id).length;
+    const b = document.createElement("button");
+    b.className = "item" + (c.id===catAdminSel ? " sel":"");
+    b.innerHTML = `<span>${c.emoji||""} ${c.nombre}</span><span style="opacity:.6">${n} prod.</span>`;
+    b.onclick = ()=>{ catAdminSel=c.id; cargarFormCat(c); pintarCategorias(); };
+    cont.appendChild(b);
+  });
+}
+function cargarFormCat(c){
+  $("#catTitulo").textContent = c ? c.nombre : "Nueva categoría";
+  $("#catNombre").value = c?.nombre||"";
+  $("#catEmoji").value = c?.emoji||"🗂️";
+}
+$("#catNuevo").onclick = ()=>{ catAdminSel=null; cargarFormCat(null); pintarCategorias(); };
+$("#catGuardar").onclick = ()=>{
+  const nombre = $("#catNombre").value.trim();
+  if(!nombre){ toast("El nombre es obligatorio"); return; }
+  if(catAdminSel){ Object.assign(db.categorias.find(c=>c.id===catAdminSel), {nombre, emoji:$("#catEmoji").value.trim()}); }
+  else { const c = {id:uid(), nombre, emoji:$("#catEmoji").value.trim()||"🗂️"}; db.categorias.push(c); catAdminSel=c.id; }
+  guardar(); pintarCategorias(); toast("Categoría guardada");
+};
+$("#catBorrar").onclick = ()=>{
+  if(!catAdminSel) return;
+  if(db.productos.some(p=>p.cat===catAdminSel)){ toast("La categoría tiene productos; muévalos antes"); return; }
+  if(!confirm("¿Eliminar esta categoría?")) return;
+  db.categorias = db.categorias.filter(c=>c.id!==catAdminSel);
+  if(catSel===catAdminSel) catSel = db.categorias[0]?.id||null;
+  catAdminSel=null; cargarFormCat(null); guardar(); pintarCategorias();
+};
+
+/* =========================================================
+   USUARIOS
+   ========================================================= */
+let usrSel = null;
+function pintarUsuarios(){
+  const cont = $("#usrLista"); cont.innerHTML = "";
+  db.usuarios.forEach(u=>{
+    const b = document.createElement("button");
+    b.className = "item" + (u.id===usrSel ? " sel":"");
+    const etiqueta = (u.rol==="admin" ? "Administrador" : "Camarero") + (u.pin ? " · 🔒" : "");
+    b.innerHTML = `<span>${u.icono||"👤"} ${u.nombre}</span><span style="opacity:.6">${etiqueta}</span>`;
+    b.onclick = ()=>{ usrSel=u.id; cargarFormUsr(u); pintarUsuarios(); };
+    cont.appendChild(b);
+  });
+}
+function cargarFormUsr(u){
+  $("#usrTitulo").textContent = u ? u.nombre : "Nuevo usuario";
+  $("#usrNombre").value = u?.nombre||"";
+  $("#usrRol").value = u?.rol||"camarero";
+  $("#usrEmoji").value = u?.icono||"👤";
+  $("#usrPin").value = u?.pin||"";
+}
+$("#usrNuevo").onclick = ()=>{ usrSel=null; cargarFormUsr(null); pintarUsuarios(); };
+$("#usrGuardar").onclick = ()=>{
+  const nombre = $("#usrNombre").value.trim();
+  if(!nombre){ toast("El nombre es obligatorio"); return; }
+  if(db.usuarios.some(u=>u.id!==usrSel && u.nombre.toLowerCase()===nombre.toLowerCase())){ toast("Ya existe un usuario con ese nombre"); return; }
+  const datos = {
+    nombre, rol:$("#usrRol").value,
+    icono:$("#usrEmoji").value.trim()||"👤",
+    pin:$("#usrPin").value.trim()
+  };
+  if(usrSel){
+    const u = db.usuarios.find(x=>x.id===usrSel);
+    Object.assign(u, datos);
+    if(usuario.id===u.id){ usuario = u; $("#sbUsuario").textContent = "👤 " + u.nombre + " (" + u.rol + ")"; }
+  } else {
+    const u = {id:uid(), ...datos}; db.usuarios.push(u); usrSel=u.id;
+  }
+  guardar(); pintarUsuarios(); toast("Usuario guardado");
+};
+$("#usrBorrar").onclick = ()=>{
+  if(!usrSel) return;
+  if(usrSel===usuario.id){ toast("No puede eliminar el usuario con el que ha iniciado sesión"); return; }
+  if(db.usuarios.length<=1){ toast("Debe existir al menos un usuario"); return; }
+  if(db.usuarios.filter(u=>u.rol==="admin").length<=1 && db.usuarios.find(u=>u.id===usrSel)?.rol==="admin"){
+    toast("Debe quedar al menos un administrador"); return;
+  }
+  if(!confirm("¿Eliminar este usuario?")) return;
+  db.usuarios = db.usuarios.filter(u=>u.id!==usrSel);
+  usrSel=null; cargarFormUsr(null); guardar(); pintarUsuarios();
+};
+
+/* =========================================================
+   CONFIGURACIÓN
+   ========================================================= */
+function pintarConfig(){
+  const c = db.config;
+  $("#cfgNombre").value=c.nombre; $("#cfgDir").value=c.dir; $("#cfgNif").value=c.nif;
+  $("#cfgPie").value=c.pie; $("#cfgMesas").value=c.numMesas;
+}
+$("#cfgGuardar").onclick = ()=>{
+  db.config = {
+    nombre:$("#cfgNombre").value.trim()||"Bar Woodpeckers", dir:$("#cfgDir").value.trim(),
+    nif:$("#cfgNif").value.trim(), pie:$("#cfgPie").value.trim(),
+    numMesas:Math.max(0, Math.min(50, parseInt($("#cfgMesas").value)||10))
+  };
+  guardar(); toast("Configuración guardada");
+};
+$("#cfgExportar").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "tpv-copia-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$("#cfgImportar").onclick = ()=>$("#cfgFichero").click();
+$("#cfgFichero").onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const datos = JSON.parse(r.result);
+      if(!datos.productos || !datos.config) throw new Error("formato");
+      if(!confirm("Esto reemplazará TODOS los datos actuales. ¿Continuar?")) return;
+      db = datos; guardar(); toast("Copia importada"); pintarConfig();
+    }catch(err){ toast("Archivo no válido"); }
+  };
+  r.readAsText(f);
+  e.target.value = "";
+};
+$("#cfgReset").onclick = ()=>{
+  if(!confirm("⚠ Se borrarán TODOS los datos (productos, tickets, clientes...). ¿Está seguro?")) return;
+  if(!confirm("Última confirmación: ¿borrar todo y empezar de cero?")) return;
+  db = datosIniciales(); guardar(); toast("Datos restablecidos"); pintarConfig();
+};
+
+/* =========================================================
+   MODALES
+   ========================================================= */
+function abrirModal(id){
+  $("#overlay").classList.add("visible");
+  $$(".modal").forEach(m=>m.style.display = "none");
+  $("#"+id).style.display = "flex";
+}
+function cerrarModal(){
+  $("#overlay").classList.remove("visible");
+}
+$$("[data-cerrar]").forEach(b=> b.onclick = cerrarModal);
+$("#overlay").onclick = e=>{ if(e.target.id==="overlay") cerrarModal(); };
+$("#pinInput")?.addEventListener("keydown", e=>{ if(e.key==="Enter") $("#btnPinOk").click(); });
+
+/* =========================================================
+   ARRANQUE
+   ========================================================= */
+cargar();
+pintarLogin();
+</script>
+</body>
+</html>
