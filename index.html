@@ -29,6 +29,13 @@ input:focus,select:focus{outline:2px solid var(--azul); outline-offset:-1px;}
 }
 #titlebar .logo{display:flex; align-items:center; gap:8px;}
 #titlebar .logo .b{width:20px;height:20px;border-radius:50%;background:#fff;color:#5a9e2f;display:flex;align-items:center;justify-content:center;font-size:13px;}
+#titlebar .tb-right{display:flex; align-items:center; gap:10px;}
+#btnMaximizar{
+  background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.5); color:#fff;
+  font-weight:bold; font-size:12px; padding:3px 10px; border-radius:5px; cursor:pointer;
+  text-shadow:0 1px 2px rgba(0,0,0,.4);
+}
+#btnMaximizar:hover{background:rgba(255,255,255,.35);}
 #infobar{
   height:30px; background:linear-gradient(to bottom,#ffffff,#e9f3dc); border-bottom:1px solid var(--borde);
   display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; color:#555; flex:0 0 auto;
@@ -439,7 +446,10 @@ table.datos .num{text-align:right;}
 <div id="app">
   <div id="titlebar">
     <div class="logo"><button id="btnMenu">☰</button><span class="b">b</span> TPV - Punto de Venta</div>
-    <span id="reloj"></span>
+    <div class="tb-right">
+      <span id="reloj"></span>
+      <button id="btnMaximizar" title="Maximizar (ESC para salir)">⛶ Maximizar</button>
+    </div>
   </div>
   <div id="infobar"><span class="b">b</span> Un punto de venta diseñado para pantallas táctiles.</div>
 
@@ -1228,6 +1238,28 @@ function tic(){
   $("#reloj").textContent = s; $("#relojLogin").textContent = s;
 }
 setInterval(tic,1000); tic();
+
+/* ---------- Maximizar / Pantalla completa ---------- */
+$("#btnMaximizar").addEventListener("click", ()=>{
+  const el = document.documentElement;
+  if(!document.fullscreenElement){
+    (el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen).call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen).call(document);
+  }
+});
+document.addEventListener("keydown", e=>{
+  if(e.key === "Escape" && document.fullscreenElement){
+    (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen).call(document);
+  }
+});
+function actualizarBtnMax(){
+  const b = $("#btnMaximizar");
+  if(document.fullscreenElement){ b.textContent = "⛶ Restaurar"; }
+  else { b.textContent = "⛶ Maximizar"; }
+}
+document.addEventListener("fullscreenchange", actualizarBtnMax);
+document.addEventListener("webkitfullscreenchange", actualizarBtnMax);
 
 /* =========================================================
    LOGIN
